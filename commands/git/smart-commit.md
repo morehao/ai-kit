@@ -6,10 +6,11 @@ description: 基于代码变更自动生成 commit message
 分析当前待提交的代码变更（git diff），理解改动意图，生成符合 Conventional Commits 规范的英文 commit message。
 
 # 分析流程
-1. 运行 `git diff --staged` 查看暂存区变更，若无暂存变更则运行 `git diff` 查看未暂存变更
-2. 结合 `git status` 了解变更文件列表，推断涉及的模块/scope
-3. 根据变更内容的语义判断 type（新增功能、修复bug、重构等）
-4. 综合所有变更提炼一条简洁的 commit message；若变更横跨多个关注点，按主要意图归纳，不拆分为多条
+1. 运行 `git add -A` 将所有变更（新增、修改、删除）加入暂存区
+2. 运行 `git diff --staged` 查看暂存区变更
+3. 结合 `git status` 了解变更文件列表，推断涉及的模块/scope
+4. 根据变更内容的语义判断 type（新增功能、修复bug、重构等）
+5. 综合所有变更提炼一条简洁的 commit message；若变更横跨多个关注点，按主要意图归纳，不拆分为多条
 
 # 格式
 <type>(可选scope): <摘要>
