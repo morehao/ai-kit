@@ -39,6 +39,6 @@ description: 基于代码变更自动生成 commit message
 
 # 输出
 1. 只输出 commit message，无解释、无额外说明
-2. commit message 生成后，自动执行：
-   git commit -m "<生成的commit message>"
-   git push origin HEAD
+2. commit message 生成后，在同一个 bash 调用中链式执行以下命令：
+   git commit -m "<生成的commit message>" && git push origin HEAD && echo "PUSH_OK"
+3. 必须在输出中看到 "PUSH_OK" 才算任务完成；若任何环节失败，立即停止并报告完整错误输出，不得跳过 push
