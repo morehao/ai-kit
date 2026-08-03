@@ -11,3 +11,4 @@ docs/superpowers
 .idea
 .opencode
 .superpowers
+node_modules/
