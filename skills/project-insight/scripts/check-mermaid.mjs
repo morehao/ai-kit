@@ -37,19 +37,25 @@ const mermaid = (await import('mermaid')).default;
 mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
 
 // —— 从多行文本提取 mermaid 块，返回 [{ globalStartLine, text, rawBlockLine }] ——
+// 支持两种围栏形态：普通 ```mermaid，以及块引用缩进的 > ```mermaid（围栏与内容行
+// 都可带 > 前缀），内容行会去掉前导的 "> " 前缀再交给 mermaid 解析。
 function extractMermaidBlocks(text) {
   const blocks = [];
+  // 围栏行：可带可选缩进 + 可选 ">" 块引用前缀；内容在开栏与关栏之间贪婪捕获
   const re =
-    /^```mermaid[ \t]*\r?\n([\s\S]*?)^```[ \t]*\r?$/gm;
+    /^[ \t]*>?[ \t]*```mermaid[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*>?[ \t]*```[ \t]*$/gm;
   let m;
   while ((m = re.exec(text)) !== null) {
     const raw = m[0];
     const startOffset = m.index;
     const globalStartLine = text.slice(0, startOffset).split('\n').length;
-    const content = m[1].replace(/\r?\n$/, '');
+    const content = m[1]
+      .split('\n')
+      .map((ln) => ln.replace(/^\s*>?\s*/, '')) // 统一去掉 "> " 块引用前缀
+      .join('\n');
     blocks.push({
       globalStartLine,
-      text: content,
+      text: content.replace(/\r?\n$/, ''),
       rawLineCount: raw.split('\n').length,
     });
   }
