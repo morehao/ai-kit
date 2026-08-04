@@ -36,6 +36,54 @@ const mermaid = (await import('mermaid')).default;
 
 mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
 
+// —— <br> 规范性 / 合法性 lint ——
+// 目标：让长标签在预览下不挤成一长行（靠 <br> 在语义点断行），并统一换行写法。
+// 判定为提示级 [MERMAID-WARN]，不计入失败 (exitCode)，避免误伤合法的图。
+// 规范写法：换行一律用 `<br>`（无斜杠）——mermaid 官方文档与标准 HTML void element 的主流写法；
+//   `<br/>` / `<br />` / `</br>` 虽也能解析渲染，但非主流，提示统一为 `<br>`。
+// 规则：
+//   ① 写法统一：检测 `<br/>` / `<br />` / `</br>` 等非规范形式，提示统一为 `<br>`。
+//   ② 合法性：`<br>` 只应出现在引号包裹的节点标签内；edge/message 等裸文本行中的
+//      `<br>` 不会被当作标签内换行处理，渲染行为不可预期，予以提示。
+//   ③ 长标签拥挤预警：标签被 `<br>` 切开后，单段仍超过 40 字符（或整段无换行、
+//      超过 40 字符）则提示在语义断点再补 `<br>`，以改善预览可读性。
+function lintBr(block) {
+  const warns = [];
+  const lines = (block.text || '').split('\n');
+  const gStart = block.globalStartLine;
+  const push = (lineNo, msg) => {
+    warns.push(`  → [MERMAID-WARN] 第 ${lineNo} 行（global ${gStart + lineNo - 1}）：${msg}`);
+  };
+  for (let i = 0; i < lines.length; i++) {
+    const ln = lines[i];
+    const brMatches = ln.match(/\s*<\/?\s*br(?:\s*\/?\s*)?>/gi);
+    const hasLabelQuote = /"/.test(ln);
+    // ① 写法统一 + ② 合法性：仅当本行确有 <br> 时才检查写法与合法位置
+    if (brMatches) {
+      // 非规范形式：带前导或尾随斜杠的 </br>、<br/>、<br />（含大小写变体）
+      const nonstandard = ln.match(/(?:<\s*\/\s*br>|<\s*br\s*\/>)/gi);
+      if (nonstandard) {
+        push(i + 1, `检测到非规范写法 ${nonstandard.map((s) => s.trim()).join('、')}，请统一为 <br>（mermaid 官方文档与 HTML 主流写法，带斜杠形式虽可渲染但非主流）。`);
+      }
+      if (!hasLabelQuote) {
+        push(i + 1, `${brMatches.join('、')} 出现在疑似非标签位置（该行无引号包裹的节点标签）。请只在引号包裹的节点标签内使用 <br>。`);
+      }
+    }
+    // ③ 长标签拥挤预警：含 "<br>" 或未断行的长标签，按 <br> 切开后仍超过 40 字符，
+    //   或整行标签未用 <br> 断行且过长 —— 均在语义断点提示再补 <br>
+    const segments = ln
+      .replace(/<\s*br(?:\s*\/?\s*)?>/gi, '\u0000')
+      .split('\u0000')
+      .map((s) => s.replace(/^.*?"/, '').replace(/".*$/, ''))
+      .map((s) => s.trim())
+      .filter((s) => s.length > 40);
+    for (const seg of segments) {
+      push(i + 1, `标签文本段「${seg.slice(0, 40)}…」超过 40 字符，预览下可能过宽，建议在语义断点补 <br> 换行。`);
+    }
+  }
+  return warns;
+}
+
 // —— 从多行文本提取 mermaid 块，返回 [{ globalStartLine, text, rawBlockLine }] ——
 // 支持两种围栏形态：普通 ```mermaid，以及块引用缩进的 > ```mermaid（围栏与内容行
 // 都可带 > 前缀），内容行会去掉前导的 "> " 前缀再交给 mermaid 解析。
@@ -89,6 +137,7 @@ async function main() {
   const sources = await readSources(files);
 
   let failCount = 0;
+  let warnCount = 0;
   let blockIndex = 0;
 
   for (const src of sources) {
@@ -112,6 +161,10 @@ async function main() {
         console.log(
           `OK   [${src.name}:${startGlobal}-${endGlobal}] type=${type} #${blockIndex}`
         );
+        // <br> 规范性 lint（提示级，不导致失败）
+        const warns = lintBr(b);
+        warnCount += warns.length;
+        for (const w of warns) console.log(w);
       } catch (err) {
         failCount += 1;
         const msg = String((err && err.message) || err).trim();
@@ -129,11 +182,13 @@ async function main() {
 
   if (failCount > 0) {
     console.log(
-      `\n校验结果：${failCount} 个 mermaid 块存在语法错误，请修复后重新运行；不保留渲染报错的图。`
+      `\n校验结果：${failCount} 个 mermaid 块存在语法错误，请修复后重新运行；不保留渲染报错的图。${warnCount ? `（另有 ${warnCount} 条 [MERMAID-WARN] <br> 规范提示，见上）` : ''}`
     );
     process.exitCode = 1;
   } else {
-    console.log('\n校验结果：全部 mermaid 块语法通过。');
+    console.log(
+      `\n校验结果：全部 mermaid 块语法通过。${warnCount ? `（含 ${warnCount} 条 [MERMAID-WARN] <br> 规范提示，见上）` : ''}`
+    );
     process.exitCode = 0;
   }
   stdout.write('', () => process.exit());
