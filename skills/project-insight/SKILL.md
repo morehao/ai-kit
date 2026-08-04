@@ -169,7 +169,7 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 > |----------|-----------|
 > | 可部署服务（Docker/常驻/云/安装器） | 单独「部署文档」：`docker-compose.yml` / `Dockerfile` / `systemd` / `launchd` / `fly.toml` / `render.yaml` 等形态 + 运维要点 |
 > | 有数据存储 / 库框架自带系统表 | 单独「数据模型」文档（判据见下方第 1 条，程序化探测决定，写五要素） |
-> | 智能体 (Agent) | 必须体现「记忆机制」：分层记忆（curated/episodic/prospective）/ 上下文压缩 / 检索策略 / 持久化。示例 `memory-system.md` |
+> | 智能体 (Agent) | 须体现 agent 关注面：记忆/上下文机制、主 Agent 循环、工具调用、Skill 体系、MCP 接入、Runtime、会话状态（详见 [`references/project-types/agent.md`](references/project-types/agent.md)）|
 > | 较长业务流程 | `sequenceDiagram` 时序图体现完整业务链路（跨模块数据流/事件时序），不画单模块局部流；入「架构深读」链路节或 `flow-*.md` |
 > | Web/API 框架 | 生命周期 / 中间件链 / 路由表 / 扩展点机制（如 Koa 洋葱模型、Hono 路由基数树） |
 > | CLI 工具 | 参数解析 / 插件系统 / 配置管理 / 退出码与错误约定 |
@@ -192,7 +192,7 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 >
 > 1. **有数据存储，或作为库/工具形态自带系统表与会话/元数据存储** → 单独「数据模型」文档：核心表/实体关系、存储选型与理由、Schema 演进策略（如 JSON blob + 提升列 / 迁移）、读写路径。文件名统一 `data-model.md`（存量文档如已用 `db-design.md` 则沿用原名，新文档一律 `data-model.md`）。**必含内容与写法见「数据模型文档规范」章节**（ER 图 + 每表字段表 / 存储选型 / 核心表设计 / 演进策略 / 读写路径）。注意：是否触发该判据由「数据模型主动探测」的程序化扫描信号决定，**不由「这项目是不是业务应用」的主观印象决定**——纯 library 框架只要自带系统表（如 go-admin 的 `goadmin_*`）、迁移（`migrations/`）、或 models 实体，同样属于数据模型关注面，须覆盖。
 > 2. **有较长业务流程** → 用 `sequenceDiagram` 时序图体现完整业务链路（跨模块/跨服务的数据流、事件时序），而非只画单模块局部流；放在「架构深读」的请求链路节或单独 `flow-*.md`。
-> 3. **智能体 (Agent) 相关** → 必须体现「记忆机制」：分层记忆（curated/episodic/prospective）、上下文压缩/compaction、检索策略、持久化。示例文件名 `memory-system.md` / `memory.md`。
+> 3. **智能体 (Agent) 相关** → 必须按 [`references/project-types/agent.md`](references/project-types/agent.md) 规格覆盖其全部必含关注面：记忆机制、主 Agent 循环、工具调用、Skill 体系、MCP 接入、Runtime、会话/任务状态、通信机制。示例文件名 `memory-system.md` / `memory.md` / `tool-calling.md` / `skill-system.md` / `mcp.md` / `runtime.md`。
 > 4. **语言惯用法命中**（语言维度表）→ 作为候选关注面独立成文（如 `goroutine-model.md`/`ownership-lifetimes.md`）或并入架构深读的相关小节；写法：每个惯用法论断带 `文件:行号` + "为什么选这个模型"的权衡，落在具体设计语境，不写成语言教科书。
 
 **产出形态：** 中小/单一关注面项目 → 单文件 `README.md`；多关注面项目 → `README.md`（概览 + 架构总览 + 核心模块导读表 + 总结，每子文档一行链接）+ `xxx.md`（关注面深读，主题语义命名，一个主题一篇）。**通用默认产出明细（分文件判定 / 丰富内容菜单 / 信息密度分配）见 [_default.md](references/project-types/_default.md)**；具体类型项目的差异化产出规格见 `references/project-types/{类型}.md`。
@@ -481,7 +481,7 @@ ER 图只表达了"有哪些表、怎么关联"，还缺字段级信息。因此
 - [ ] 多关注面项目已按关注面拆子文档，未把全部内容压进单个 README
 - [ ] 多关注面项目 README 含「核心模块导读」表 + ≥1 篇带文件的子文档
 - [ ] 类型触发项已覆盖：可部署 → 部署文档；有存储 → 数据模型五要素成文（见「数据模型文档规范」）；长流程 → 时序图；智能体 → 记忆机制；命中语言惯用法维度 → 对应深层主题成文（非语言教科书，落在设计语境 + `文件:行号`）
-- [ ] **已按类型规格加载并覆盖了对应关注面**（agent→记忆机制、admin→权限+数据模型+部署、framework→扩展机制+语言惯用法、im→协议+网关+存储+会话生命周期）；类型规格仅补充细化，未放宽任一通用铁律
+- [ ] **已按类型规格加载并覆盖了对应关注面**（agent→记忆+Agent循环+工具调用+Skill+MCP+Runtime+会话状态，逐一按 `agent.md` 规格覆盖；admin→权限+数据模型+部署；framework→扩展机制+语言惯用法；im→协议+网关+存储+会话生命周期）；类型规格仅补充细化，未放宽任一通用铁律
 - [ ] 通用默认产出已由 `_default.md` 承载（若项目回落通用），README 已标注「按 XX 类规格 / 通用默认规格」产出
 - [ ] **数据模型关注面已按「数据模型主动探测」判定**：跑过探测信号（`*.sql` / `migrations/` / models 实体 / ORM 建表入口），命中即五要素成文、未命中不硬凑
 - [ ] 深度达标：关键论断含 Why / 权衡 / 对比（而非泛泛而谈），核心模块满足四要素可复现性
