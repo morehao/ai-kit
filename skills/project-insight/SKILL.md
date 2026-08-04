@@ -503,13 +503,3 @@ ER 图只表达了"有哪些表、怎么关联"，还缺字段级信息。因此
 - "How is <lib> implemented under the hood?"
 - "Deep-dive <path> and write the analysis into my knowledge base"
 
----
-
-# Changelog
-
-## 2026-08-04
-- 新增 `scripts/verify-references.mjs`：真源引用程序化校验（`GROUNDER-OK/WEAK/MISMATCH/UNVERIFIED/TRAVERSAL` 五态 + 退出码），引用以 `<!-- snippet:[原文] -->` / `<!-- snippet-base64:... -->` 指纹块精确重定位；原 Python 参考实现压缩为原理简述。
-- `check-mermaid.mjs` 增加依赖缺失引导；保留 jsdom（实测 mermaid.parse 无法脱离 DOM，手写 stub 脆弱不采纳）。
-- 精简 SKILL.md 重复规则为单一事实源：质量红线 / 常见错误表 / Quick Reference 长条目压缩为「动词短语 + 章节指针」，删冗余 Python 代码块。
-- 统一数据模型文档命名为 `data-model.md`（存量 `db-design.md` 沿用豁免）。
-- description 与触发场景补英文触发词。
