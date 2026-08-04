@@ -45,4 +45,4 @@
 - 定维度非全覆盖：选项目特点最突出的 2-4 维深入，不每维都写。
 - 深挖方向覆盖「关注面」而非「每节都写」；命中「类型驱动的关注面触发判据」的关注面够深则独立成文、浅则并入 README 小节（触发判据见 SKILL.md「分文件判定」）。
 - 深度不足标 `[WIP]`/`TODO`，不硬凑；深度方法论遵循 [analysis-guide.md](../analysis-guide.md)（Why>What、权衡、叙事连贯、全局关联）。
-- 图与引用同目录；名量子文档用主题语义命名（`architecture.md`/`deployment.md`/`data-model.md`/`memory-system.md`/`llm-route-system.md`）。
+- 图与引用同目录；每个子文档用主题语义命名（`architecture.md`/`deployment.md`/`data-model.md`/`memory-system.md`/`llm-route-system.md`）。
