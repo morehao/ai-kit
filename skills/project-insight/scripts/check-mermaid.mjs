@@ -17,12 +17,21 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { stdin, stdout } from 'node:process';
 
-import { JSDOM } from 'jsdom';
+// —— 依赖加载与 DOM 垫片 ——
+// 脚本依赖 jsdom 与 mermaid。符号链接注册时依赖已就位；
+// 复制注册因 scripts/node_modules 被 gitignore，需在 scripts/ 下重新 npm install。
+// 注意顺序：先加载 jsdom 并注入全局 window/document/navigator，再加载 mermaid，
+//           否则 mermaid 顶层导入 DOMPurify 时拿不到 DOM，parse 会报
+//           「DOMPurify.sanitize is not a function」。
+let JSDOM;
+try {
+  JSDOM = (await import('jsdom')).JSDOM;
+} catch {
+  console.error('[依赖缺失] 缺少 jsdom 依赖，请先在 scripts/ 目录执行：npm install');
+  console.error('  （本 skill 通过符号链接注册时依赖已就位；若为复制注册，node_modules 不随 git 提交，需重新安装）');
+  process.exit(2);
+}
 
-// —— DOM 垫片：让 mermaid 的 DOMPurify/安全层在 Node 下可运行 ——
-// 注意：必须先在全局注入 window/document/navigator，再动态导入 mermaid，
-//       否则 mermaid 顶层导入 DOMPurify 时拿不到 DOM，会在 parse 时报
-//       「DOMPurify.sanitize is not a function」。
 const dom = new JSDOM('', { pretendToBeVisual: true });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
@@ -32,7 +41,13 @@ Object.defineProperty(globalThis, 'navigator', {
   writable: true,
 });
 
-const mermaid = (await import('mermaid')).default;
+let mermaid;
+try {
+  mermaid = (await import('mermaid')).default;
+} catch {
+  console.error('[依赖缺失] 缺少 mermaid 依赖，请先在 scripts/ 目录执行：npm install');
+  process.exit(2);
+}
 
 mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
 

@@ -1,6 +1,6 @@
 ---
 name: project-insight
-description: 开源项目深度解读，产出每个论断都带可点开验证的真实源码引用（文件:行号），避免幻觉。当用户要求"分析、解读、洞察、深读、总结某个开源项目"、问"这个项目怎么实现的、值得学什么"，或要求解读文档附带可验证的真实源码引用时使用。输入通常是本地源码绝对路径，也可接受远端地址（自动浅克隆）。
+description: 开源项目深度解读，产出每个论断都带可点开验证的真实源码引用（文件:行号），避免幻觉。当用户要求"分析、解读、洞察、深读、总结某个开源项目"、问"这个项目怎么实现的、值得学什么"，或要求解读文档附带可验证的真实源码引用时使用。输入通常是本地源码绝对路径，也可接受远端地址（自动浅克隆）。Also applies when the user asks to "analyze / examine / break down / deep-dive an open-source project", "how is this implemented", or "what's worth learning from this repo".
 ---
 
 # 开源项目洞察
@@ -106,7 +106,7 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 4. **定维度，非全覆盖**。从维度（概览/架构/认证/核心实现/存储/设计模式/部署/测试/社区/同类对比）里选项目特点最突出的 2-4 个深入，不要每个都写一段。
 5. **写深，不翻译**。遵循 [analysis-guide.md](references/analysis-guide.md) 的深度方法论（Why>What、权衡、叙事连贯、全局关联、四要素完整性）。深度不足标 `[WIP]`/`TODO`，不硬凑。
 6. **真源校验（不可跳过）**：
-   - **代码引用**：提取文档所有 `[path:start-end]()` 引用 → 逐条跑 `ground_citations` 重定位 → 定位成功用真实行号覆盖；失败则**保留原样并追加 `[UNVERIFIED]` 标记**，不静默通过，并在文末列出所有 `[UNVERIFIED]` 项提示人工复核。
+   - **代码引用**：对本次产出的全部 md 跑 `node scripts/verify-references.mjs <kb_repo> <产物.md>...` → 逐条重定位（有指纹块精确校验，无指纹块降级弱校验）→ `[GROUNDER-MISMATCH]` 用真实行号覆盖；`[GROUNDER-UNVERIFIED]` **保留原样并追加 `[UNVERIFIED]` 标记**，不静默通过，并在文末列出所有 `[UNVERIFIED]` 项提示人工复核；`[GROUNDER-TRAVERSAL]` 必须修复路径。退出码非 0 视为未通过。（`verify-references.mjs` 实现原理见「真源引用验证」。）
    - **Mermaid 图**：对本次产出的全部 md 跑 `scripts/check-mermaid.mjs` → 任一 `[MERMAID-ERROR]` 修复至全 `OK`，不保留渲染报错图（详见「图表约束」的 `### Mermaid 语法程序校验`）。
 7. **维护索引（收尾三步）**：在 `kb_repo` 下创建 `{分类}/{项目}/README.md` → 更新 `{分类}/README.md` 索引表 → 若分类尚不存在，在 `kb_repo` 顶层 README 添加新分类。
 8. **提交边界**：本 skill 只负责落盘（写文件、更新索引），**不自动执行 `git add/commit/push`**。若 `kb_repo` 是 git 仓库，落地后列出本次变更文件清单，提示用户自行决定是否提交，不代为决策。
@@ -132,7 +132,7 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 > **类型驱动的关注面触发判据**（满足即作为候选关注面；篇幅足够深挖则独立成 `xxx.md` 主题文档，浅则先并入 README 对应小节）：
 >
 > 1. **可部署项目**（Docker/常驻/云/安装器）→ 单独「部署文档」，覆盖 `docker-compose.yml` / `Dockerfile` / `systemd` / `launchd` / `fly.toml` / `render.yaml` 等形态与运维要点。
-> 2. **有数据存储，或作为库/工具形态自带系统表与会话/元数据存储** → 单独「数据模型」文档：核心表/实体关系、存储选型与理由、Schema 演进策略（如 JSON blob + 提升列 / 迁移）、读写路径。示例文件名 `data-model.md` / `db-design.md`。**必含内容与写法见「数据模型文档规范」章节**（ER 图 + 每表字段表 / 存储选型 / 核心表设计 / 演进策略 / 读写路径）。注意：是否触发该判据由「数据模型主动探测」的程序化扫描信号决定，**不由「这项目是不是业务应用」的主观印象决定**——纯 library 框架只要自带系统表（如 go-admin 的 `goadmin_*`）、迁移（`migrations/`）、或 models 实体，同样属于数据模型关注面，须覆盖。
+> 2. **有数据存储，或作为库/工具形态自带系统表与会话/元数据存储** → 单独「数据模型」文档：核心表/实体关系、存储选型与理由、Schema 演进策略（如 JSON blob + 提升列 / 迁移）、读写路径。文件名统一 `data-model.md`（存量文档如已用 `db-design.md` 则沿用原名，新文档一律 `data-model.md`）。**必含内容与写法见「数据模型文档规范」章节**（ER 图 + 每表字段表 / 存储选型 / 核心表设计 / 演进策略 / 读写路径）。注意：是否触发该判据由「数据模型主动探测」的程序化扫描信号决定，**不由「这项目是不是业务应用」的主观印象决定**——纯 library 框架只要自带系统表（如 go-admin 的 `goadmin_*`）、迁移（`migrations/`）、或 models 实体，同样属于数据模型关注面，须覆盖。
 > 3. **有较长业务流程** → 用 `sequenceDiagram` 时序图体现完整业务链路（跨模块/跨服务的数据流、事件时序），而非只画单模块局部流；放在「架构深读」的请求链路节或单独 `flow-*.md`。
 > 4. **智能体 (Agent) 相关** → 必须体现「记忆机制」：分层记忆（curated/episodic/prospective）、上下文压缩/compaction、检索策略、持久化。示例文件名 `memory-system.md` / `memory.md`。
 
@@ -230,7 +230,7 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 - 删掉的现状数字不直接抹掉，用 `> **演进说明(版本号)**` 引用块保留历史轨迹，再写新现状。
 - 文档头更新版本号，加一段"本版增量更新说明"，列出相比上一版的主要变更。
 - 能力清单、技术栈表、架构图、对比表里的数字要**同步更新**，只改正文会漏。全篇 grep 核对一致性。
-- 同全新分析流程真源校验：改完后重跑一遍，新增/改动的引用同样经程序重定位，失败标 `[UNVERIFIED]`；mermaid 块同样重跑 `scripts/check-mermaid.mjs`，`[MERMAID-ERROR]` 修复至全 `OK`。
+- 同全新分析流程真源校验：改完后重跑一遍 `scripts/verify-references.mjs` 与 `scripts/check-mermaid.mjs`，新增/改动的引用同样经程序重定位，失败标 `[UNVERIFIED]`；`[MERMAID-ERROR]` 修复至全 `OK`。
 - 落盘后同样只提示变更清单，不代为 `git commit`。
 
 ---
@@ -258,57 +258,27 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 >
 > 完整实现细节交给读者点开 `[路径:start-end]` 的源码锚点即可。仅当 **该段代码本身就是不可绕过的设计载体**，且用户明确要求贴码时，才允许放**精简片段**（只取不可绕过的核心，不整段照搬），孤立的 `> [path] — 整段代码` 引用块列为违规。
 
-### 核心实现（Python，可迁移，作为验证工具参考）
+> **指纹块（Grounding fingerprint）约定**：为使程序精确校验行号，每条展示引用 `[path:start-end]()` 后应紧邻一个**不进入正文渲染**的指纹注释（常规做法，非可省略项；省略时脚本只能降级弱校验，无法发现行号偏差）。两种形式二选一：
+>
+> ```
+> [path:start-end]() 一句结论/权衡
+> <!-- snippet: 从源码逐字复制的片段（仅作程序定位用，不进正文） -->
+>
+> <!-- 或 base64 形式（snippet 含 `--` 等破坏注释的字符时用）：
+> <!-- snippet-base64:<snippet 原文的 base64> -->
+> ```
+>
+> - snippet 必须**从源码上下文逐字复制**（上述铁律不变），只作程序重定位用、不进入正文。
+> - 程序读取该注释 → 在真实源码里整段搜索 → 算出真实行号 → 校对文档标注，输出 `[GROUNDER-OK/MISMATCH]`。
+> - 定位失败时脚本输出 `[GROUNDER-UNVERIFIED]`，与正文标 `[UNVERIFIED]` 对应，文末汇总供人工复核。
 
-```python
-# snippet 作为指纹，在真实源码里精确定位行号
-def locate_snippet(text: str, snippet: str):
-    snippet = snippet.strip("\n")
-    if not snippet:
-        return None
-    pos = text.find(snippet)                       # ① 精确整段搜索
-    if pos != -1:
-        start = text.count("\n", 0, pos) + 1
-        return start, start + snippet.count("\n")
-    # ② 退化策略：以 snippet 首非空行为锚点
-    first = next((ln.strip() for ln in snippet.splitlines() if ln.strip()), "")
-    if first:
-        idx = text.find(first)
-        if idx != -1:
-            start = text.count("\n", 0, idx) + 1
-            return start, start + snippet.count("\n")
-    return None
+### 核心实现（已有可运行工具，原理简述）
 
-# 逐条重定位模型给出的引用
-def ground_citations(citations, repo_dir):
-    for cit in citations:
-        if not cit.snippet or not cit.file_path:
-            continue
-        path = os.path.join(repo_dir, cit.file_path)
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                text = f.read()
-        except OSError:
-            cit.verified = False
-            continue
-        loc = locate_snippet(text, cit.snippet)
-        if loc:
-            cit.start_line, cit.end_line = loc       # 真实行号覆盖模型行号
-            cit.verified = True
-        else:
-            cit.verified = False                     # 定位失败：显式标记，不静默放过
-```
-
-### 配套安全：读文件必须防路径穿越
-
-```python
-repo_dir = os.path.realpath(repo_dir)
-target = os.path.realpath(os.path.join(repo_dir, file_path))
-if os.path.commonpath([repo_dir, target]) != repo_dir:
-    raise ValueError("Resolved path escapes the repository directory")
-```
-
-用 `realpath` 消除 `../` 与符号链接，再用 `commonpath` 确保目标仍在仓库根内——防止 `../../etc/passwd` 一类任意文件读取。此校验同样适用于对 `kb_repo` 的任何读写。
+> 真源重定位已由 `scripts/verify-references.mjs` 落地（`node verify-references.mjs <kb_repo> <解读.md>...`），输出 `[GROUNDER-OK/WEAK/MISMATCH/UNVERIFIED/TRAVERSAL]` 五态并控制退出码，内嵌路径防穿越。核心原理如下（跨语言可迁移，脚本即按此实现）：
+>
+> - **定位**：snippet 是可信指纹——`text.find(snippet)` 精确整段搜索定位真实行号；失败则退化到"以 snippet 首非空行为锚点"搜索。
+> - **覆盖**：定位成功用真实行号覆盖模型行号；失败显式置为未验证（对应 `[UNVERIFIED]`），不静默放过。
+> - **防穿越**：`realpath` 消除 `../` 与符号链接，再校验目标仍在仓库根内（`commonpath`/公共前缀）——防止 `../../etc/passwd` 一类任意文件读取。此校验同样适用于对 `kb_repo` 的任何读写。
 
 **教训**：若解读走 RAG（代码量大的仓库），切分时给每个 chunk 记录真实起始/结束行号（切分器对每个 chunk 独立复制 `meta_data`），否则后续落点无据可依。
 
@@ -386,7 +356,7 @@ if os.path.commonpath([repo_dir, target]) != repo_dir:
 
 # 数据模型文档规范
 
-判定依据见「分文件判定」类型触发判据第 2 条：**项目有数据存储，或作为库/框架自带系统表与会话/元数据存储**（关系库 / NoSQL / 键值 / 文件式数据）即必须产出数据模型文档，独立成篇时可命名 `data-model.md` / `db-design.md`。数据模型是"关注面"中最容易退化成"字段清单罗列"的一类——本小节与其说是补内容，不如说是**强制把它写成设计，而非数据字典**。判断标准：一个读者看完能回答"为什么用这套存储、数据怎么演进、写读路径怎么走"，而不是只看到一张表。
+判定依据见「分文件判定」类型触发判据第 2 条：**项目有数据存储，或作为库/框架自带系统表与会话/元数据存储**（关系库 / NoSQL / 键值 / 文件式数据）即必须产出数据模型文档，独立成篇时命名统一 `data-model.md`（存量 `db-design.md` 沿用原名，新文档一律 `data-model.md`）。数据模型是"关注面"中最容易退化成"字段清单罗列"的一类——本小节与其说是补内容，不如说是**强制把它写成设计，而非数据字典**。判断标准：一个读者看完能回答"为什么用这套存储、数据怎么演进、写读路径怎么走"，而不是只看到一张表。
 
 **是否进入本关注面，由下方「数据模型主动探测」的程序化扫描决定，不由"这项目是不是业务应用"的主观印象决定。**
 
@@ -401,7 +371,7 @@ if os.path.commonpath([repo_dir, target]) != repo_dir:
 
 > 触发示例（go-admin）：探测命中 `data/migrations/`（`admin_YYYY_MM_DD_..._{mysql,postgres,sqlite,ms}.sql` 8 个按库分文件）、`plugins/admin/models/`（`base/menu/operation_log/permission/role/site/user.go` 7 个模型）、`plugins/admin/data/mysql/admin.sql`（`admin.sql:28/64/84/113/141/167/192/219/235/260` 定义 10 张 `goadmin_*` 表）→ 应产出 `data-model.md`，而非让表只散落在 table-dsl / auth-rbac 里。
 
-命中且篇幅足够独立深挖则单独成篇 `data-model.md`（或 `db-design.md`）；篇幅偏浅可先并入 README 对应小节，但**必须**至少有 ER 图 + 核心表字段表 + 一句存储选型理由，不得整段省略。
+命中且篇幅足够独立深挖则单独成篇 `data-model.md`；篇幅偏浅可先并入 README 对应小节，但**必须**至少有 ER 图 + 核心表字段表 + 一句存储选型理由，不得整段省略。
 
 数据模型文档**必含**以下五部分（缺一部分即未完成）：
 
@@ -448,19 +418,18 @@ ER 图只表达了"有哪些表、怎么关联"，还缺字段级信息。因此
 - [ ] 说清项目根因
 - [ ] 多关注面项目已按关注面拆子文档，未把全部内容压进单个 README
 - [ ] 多关注面项目 README 含「核心模块导读」表 + ≥1 篇带文件的子文档
-- [ ] 类型触发项已覆盖：可部署项目有部署文档；**有存储的项目数据模型文档满五要素（ER 图 + 每表字段表 / 存储选型与理由 / 核心表设计 / Schema 演进策略 / 读写路径），非纯字段罗列**；长流程有时序图；智能体项目有记忆机制
-- [ ] **数据模型关注面已按「数据模型主动探测」判定**：已对源码跑过探测信号（`*.sql` / `migrations/` / models 实体 / ORM 建表入口），既未因"非业务应用"形态（如库/框架自带 `goadmin_*` 系统表）跳过，也未在未命中时硬凑 data-model 文档
+- [ ] 类型触发项已覆盖：可部署 → 部署文档；有存储 → 数据模型五要素成文（见「数据模型文档规范」）；长流程 → 时序图；智能体 → 记忆机制
+- [ ] **数据模型关注面已按「数据模型主动探测」判定**：跑过探测信号（`*.sql` / `migrations/` / models 实体 / ORM 建表入口），命中即五要素成文、未命中不硬凑
 - [ ] 深度达标：关键论断含 Why / 权衡 / 对比（而非泛泛而谈），核心模块满足四要素可复现性
-- [ ] **架构为主：无大段代码块堆积，编码细节已化为叙述 + `文件:行号`，未因用户要求逐实现贴码**
-- [ ] **篇幅与关注面匹配：README 作概览/导读、深读在子文档，未把多关注面硬塞进单个 README；该拆已拆、无拖沓，不为达标压缩有效内容**
-- [ ] **正文无整段贴码**：非-mermaid 代码块仅留承载设计的关键片段，避免堆积；无 `> [path] — 整段代码` 孤立引用块
-- [ ] **强制图位已用图**：启动流程/核心请求链路/连接-会话生命周期/跨模块时序命中即给了 Mermaid，未用纯文字长段走流程；数据模型文档已有 ER 图（`erDiagram` 或 `graph`）**且每张核心表配了字段表**；每篇子文档 ≥1 张本关注面核心链路图
+- [ ] **正文无整段贴码**：编码细节化为叙述 + `文件:行号`，代码块仅留承载设计的关键片段，无 `> [path] — 整段代码` 孤立块（见「真源引用验证 / 阅读体验配额」）
+- [ ] **篇幅与关注面匹配**：README 作概览/导读、深读在子文档，该拆已拆、无拖沓（见「分文件判定」）
+- [ ] **强制图位已用图**：启动流程/核心请求链路/连接-会话生命周期/跨模块时序命中即给了 Mermaid，未用纯文字长段走流程；数据模型文档已有 ER 图且每张核心表配了字段表；每篇子文档 ≥1 张本关注面核心链路图
 - [ ] **标题为语义式（`##` 层级 + 语义词），无 `## 0.` / `## 1.` / `## 第N部分` 数字前缀**
 - [ ] **正文中文为主，英文引用必配中文解读，无孤立纯英文段落**
 - [ ] 索引同步（新项目/文档已落在 `kb_repo`，更新 `{分类}/README.md`，必要时顶层 `README.md`）
-- [ ] **多关注面项目 README 独立「子文档索引」章节已列全所有子文档链接；README 正文「核心模块导读」表每行及概览/架构/总结中的关注面提及处均已就地给出 `[\`xxx.md\`](xxx.md)` 超链接；新增/拆分子文档已同步回写 README，无遗漏**
-- [ ] **所有代码引用经程序重定位验证，非记忆行号**；定位失败已标 `[UNVERIFIED]` 并汇总列出；路径为仓库相对路径且未脱离仓库根
-- [ ] **所有 Mermaid / SVG 图可渲染、不报错，且无 mermaid + svg 重复**；Mermaid 块已在落盘前跑 `scripts/check-mermaid.mjs` 全 `OK`，无 `[MERMAID-ERROR]`，且 `<br>` 换行 `[MERMAID-WARN]` 已收敛为 0
+- [ ] **子文档索引同步完整**：README 独立「子文档索引」章节列全链接 + 正文/导读表每行就近内链，新增即回写（见「分文件判定」）
+- [ ] **所有代码引用经程序重定位验证**（`verify-references.mjs` 全过，非记忆行号）；定位失败已标 `[UNVERIFIED]` 并汇总列出；路径为仓库相对路径且未脱离仓库根
+- [ ] **所有 Mermaid / SVG 图可渲染、不报错，且无 mermaid + svg 重复**；Mermaid 块已跑 `scripts/check-mermaid.mjs` 全 `OK`，无 `[MERMAID-ERROR]`，且 `<br>` 换行 `[MERMAID-WARN]` 已收敛为 0
 - [ ] 源码输入为本地绝对路径，`source_repo` 已用 `realpath` 规范化并作验证根
 - [ ] 落盘后已列出变更文件清单供用户决定是否提交，未擅自执行 git commit
 
@@ -478,12 +447,12 @@ ER 图只表达了"有哪些表、怎么关联"，还缺字段级信息。因此
 | 文档自称 v0.8 却没核对真实上游版本/diff | 增量铁律 3：先取真实依据；拿不到就声明代码快照比对。 |
 | 新建文档后忘了更新分类索引 | 收尾三步不能跳。 |
 | 把 README 翻译一遍充深度 | 这是提炼不是翻译；深度不足标 [WIP]，按 analysis-guide 写深。 |
-| 默认堆满完整代码块当深度 | 叙述优先：设计观点写成散文，编码细节用 `文件:行号` 指向源码，仅用户明确要求某具体实现时才贴码。 |
+| 默认堆满完整代码块当深度 | 叙述优先：设计观点写成散文，编码细节用 `文件:行号` 指向源码，仅用户明确要求某具体实现时才贴码（见「真源引用验证」）。 |
 | 每处引用贴整段代码（`> [path] — 完整 code`） | Grounding 指纹（snippet）与展示分离：正文只放「结论/权衡 + `[路径:行号]`」，完整实现交给读者点源码。 |
 | 把流程写成纯文字长段 | 启动流程/请求链路/生命周期/跨模块时序命中即给 Mermaid；文字只做图外补叙。 |
 | 篇幅失控、该拆未拆 | 关注 README 是否塞进多关注面、是否拖沓，而非死守行数；该拆子文档就拆，不为达标压缩有效内容。 |
-| 拆了子文档却忘在 README 列链接 | 拆分即填 README 独立「子文档索引」章节，一行一条，且正文/导读表每行就近给出 `[\`xxx.md\`](xxx.md)`；新增子文档同步回写。 |
-| 把数据模型写成字段清单罗列 | 数据模型文档按「数据模型文档规范」五要素写：ER 图 + 每表字段表 / 存储选型与理由 / 核心表设计 / Schema 演进策略 / 读写路径；字段表是结构化归纳，核心表仍以 `文件:行号` 指向而非整段贴建表 SQL。 |
+| 拆了子文档却忘在 README 列链接 | 按「分文件判定」的索引约定：README 专章列全 + 正文/导读表就近内链，新增即回写。 |
+| 把数据模型写成字段清单罗列 | 按「数据模型文档规范」五要素写（ER 图 + 每表字段表 / 存储选型 / 核心表设计 / 演进策略 / 读写路径），写成设计而非数据字典。 |
 | 凭"是不是业务应用"主观跳过数据模型（如库/框架只当自带表看待） | 跑「数据模型主动探测」的程序化信号（`*.sql` / `migrations/` / models 实体 / ORM 建表入口），命中即触发五要素成文，不以项目形态为由省略。 |
 | 标题写 `## 0.` / `## 1.` / `## 第N部分` | 靠 Markdown `##/###` 天然层级，标题用语义词（决策一、亮点、问题）而非纯数字前缀，列表项序号不算标题。 |
 | 整段英文引用且无中文解读 | 优先中文转述；保留英文原句必须紧跟中文解读；正文中文为主，标识符保留英文。 |
@@ -497,7 +466,7 @@ ER 图只表达了"有哪些表、怎么关联"，还缺字段级信息。因此
 | 把源码仓库误判为知识库仓库 | 检查 go.mod/package.json 等工程清单，命中即视为排除信号。 |
 | 图渲染报错或 mermaid+svg 重复 | 落盘前跑 `scripts/check-mermaid.mjs` 全 `OK`（`mermaid.parse()` 真解析），有 `[MERMAID-ERROR]` 修复至通过；同一张图只保留一种形式。 |
 | 标签内 `<br>` 乱用导致预览挤压 | 换行统一用无斜杠 `<br>`、只用在引号标签内；长标签在语义断点补 `<br>`，跑 `check-mermaid.mjs` 使 `[MERMAID-WARN]` 收敛为 0。 |
-| 读源码文件无路径防护 | `realpath` + `commonpath` 白名单校验，对 kb_repo 同样适用。 |
+| 读源码文件无路径防护 | realpath 规范化 + 公共前缀白名单校验（`verify-references.mjs` 内已实现），对 kb_repo 同样适用。 |
 | 落盘后擅自 git commit | 只列变更清单，是否提交交给用户决定。 |
 
 ---
@@ -511,13 +480,13 @@ ER 图只表达了"有哪些表、怎么关联"，还缺字段级信息。因此
 - 输出：`{kb_repo}/{分类}/{项目}/README.md` + `{分类}/README.md` 索引 + 顶层 `README.md`；主 md + 必要主题式 `xxx.md` 深读子文档 + `.svg` 复杂图。
 - 分文件（**输出落盘判据**，按项目复杂度/类型非行数）：项目可自然切出 ≥3 个能独立深挖的关注面（或命中类型触发判据）→ 必须拆子文档，README 只做概览/导读，深读进子文档；凑不够深度则退化为单文件。
 - 深度：遵循 [analysis-guide.md](references/analysis-guide.md)——Why>What、权衡三角、对比式思考、叙事连贯、全局关联、四要素可复现性。
-- 阅读体验：**篇幅由关注面驱动、不设行数上限**（README 作概览/导读、深读进子文档，该拆就拆，不为达标压缩）+ **引用展示与指纹分离**（正文只放结论/权衡 + `[路径:行号]`，不贴整段代码）+ **强制图位**（启动/请求链路/生命周期/跨模块时序必给 Mermaid）+ **README 独立「子文档索引」章节列全子文档链接**。
+- 阅读体验：篇幅由关注面驱动、不设上限；引用展示与指纹分离、强制图位、子文档索引三约定，详见「阅读体验配额 / 图表约束 / 分文件判定」。
 - 增量铁律：先读 → 差异驱动（git diff / release notes 为唯一依据，拿不到则声明代码快照比对）→ 最小破坏 → 同步数字与索引。
 - 变更粒度：改段落 → 加独立 md → 重排主体（几乎不用）。
-- 真源验证：snippet 是可信指纹且只作定位、不进正文，模型行号是猜的 → 在真实文件重定位覆盖；定位失败标 `[UNVERIFIED]`；引用用仓库相对路径 `文件.ext:行号` + 防穿越校验。
-- 图表：Mermaid ` ```mermaid ` 为主（过复杂就拆图、**落盘前跑 `scripts/check-mermaid.mjs` 校验，全 `OK` 才通过**；`<br>` 换行统一 `<br>`、`[MERMAID-WARN]` 收敛为 0），超大/定制视觉才导 `.svg`，不重复；启动/请求链路/生命周期/跨模块时序强制给图。
+- 真源验证：`verify-references.mjs <kb_repo> <解读.md>...` 程序重定位，snippet 只作定位不进正文，失败标 `[UNVERIFIED]`，引用用仓库相对路径 + 防穿越校验。
+- 图表：Mermaid ` ```mermaid ` 为主（落盘前跑 `scripts/check-mermaid.mjs` 校验全 `OK`；`<br>` 换行统一 `<br>`、`[MERMAID-WARN]` 收敛为 0），超大/定制视觉才导 `.svg`，不重复；启动/请求链路/生命周期/跨模块时序强制给图。
 - 收尾（全新）：建项目 README → 更新分类索引 → 必要时顶层 README → 列变更清单，不代为 commit。
-- 质量红线：kb_repo 判定 / 能力表 / 技术栈表 / Mermaid 图（`check-mermaid.mjs` 全 OK）/ 链路 / ≥2 处真源引用 / 根因 / **深度达标（四要素）** / **架构为主（叙述 + 引用，而非代码块堆积）** / **语义式标题（无数字前缀）** / **中文为主 + 英文必配解读** / 索引同步 / 引用程序验证（含 UNVERIFIED 标记）/ 图表可渲染（程序判定）。
+- 质量红线：kb_repo 判定 / 能力表 / 技术栈表 / Mermaid 图（`check-mermaid.mjs` 全 OK）/ 链路 / ≥2 处真源引用 / 根因 / 深度达标（四要素）/ 正文无整段贴码 / 语义式标题（无数字前缀）/ 中文为主 + 英文必配解读 / 索引同步 / 引用程序验证（`verify-references.mjs` 全过 + UNVERIFIED 标记）/ 图表可渲染（程序判定）。
 
 ---
 
@@ -530,3 +499,17 @@ ER 图只表达了"有哪些表、怎么关联"，还缺字段级信息。因此
 - "xxx 最近发布 vX 了，更新下我们的分析文档"
 - "之前的分析觉得不够深，再深入剖析一下核心模块"
 - "给这个仓库写一份带真实源码引用的解读"
+- "Break down the architecture of <repo> with source references"
+- "How is <lib> implemented under the hood?"
+- "Deep-dive <path> and write the analysis into my knowledge base"
+
+---
+
+# Changelog
+
+## 2026-08-04
+- 新增 `scripts/verify-references.mjs`：真源引用程序化校验（`GROUNDER-OK/WEAK/MISMATCH/UNVERIFIED/TRAVERSAL` 五态 + 退出码），引用以 `<!-- snippet:[原文] -->` / `<!-- snippet-base64:... -->` 指纹块精确重定位；原 Python 参考实现压缩为原理简述。
+- `check-mermaid.mjs` 增加依赖缺失引导；保留 jsdom（实测 mermaid.parse 无法脱离 DOM，手写 stub 脆弱不采纳）。
+- 精简 SKILL.md 重复规则为单一事实源：质量红线 / 常见错误表 / Quick Reference 长条目压缩为「动词短语 + 章节指针」，删冗余 Python 代码块。
+- 统一数据模型文档命名为 `data-model.md`（存量 `db-design.md` 沿用豁免）。
+- description 与触发场景补英文触发词。
