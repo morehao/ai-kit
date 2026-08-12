@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// check-mermaid.mjs —— 用 mermaid.parse() 真解析校验 Markdown 里的所有 mermaid 代码块。
+// check-mermaid.mjs —— 用 mermaid.parse() 真解析 + 对 flowchart 追加 render() 校验
+// Markdown 里的所有 mermaid 代码块。
 //
 // 用法：
 //   node check-mermaid.mjs <file.md> [file2.md ...]
@@ -8,10 +9,15 @@
 // 行为：
 //   - 提取每个 ```mermaid ... ``` 代码块，记录其在文件中的全局起止行号。
 //   - 对每块调用 mermaid.detectType + mermaid.parse 做真实语法解析。
-//   - 全部 OK 则以退出码 0 结束；任一失败打印 [MERMAID-ERROR] 并以非 0 退出码结束（不静默放过，类比引用定位失败的 [UNVERIFIED]）。
+//   - 对 flowchart/graph 类型额外调用 mermaid.render()，以捕获「子图父链成环」
+//     （parse 检测不到、render 布局期才报错）等布局语义错误；sequence/state 等
+//     类型仍只走 parse（纯 jsdom 下 render 会误报 DOM 局限）。
+//   - 全部 OK 则以退出码 0 结束；任一失败打印 [MERMAID-ERROR] 并以非 0 退出码
+//     结束（不静默放过，类比引用定位失败的 [UNVERIFIED]）。
 //
 // 原理：mermaid 默认依赖 DOMPurify（需要 DOM）。此处注入最小 jsdom 垫片，
-//       使 mermaid.parse() 能在纯 Node 下以真实解析器工作，而不必引入 puppeteer/Chromium。
+//       使 mermaid.parse()/render() 能在纯 Node 下以真实解析器工作，而不必引入
+//       puppeteer/Chromium。render 还需补 CSSStyleSheet 与 SVG 测量方法垫片（见下）。
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -50,6 +56,34 @@ try {
 }
 
 mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+
+// —— 面向 render 阶段的 DOM/SVG 垫片 ——
+// mermaid.parse() 只做语法解析，检测不到「子图父链成环」（如把某节点设为自身子图的
+// parent，报 "Setting X as parent of X would create a cycle"）这类在 render 布局期
+// 才暴露的语义错误。为捕获这类错误，脚本对 flowchart/graph 类型额外调用一次
+// mermaid.render()。render 需要完整的 SVG DOM 能力，纯 Node + jsdom 下缺以下方法，
+// 逐一补最小垫片（实验验证：补足后 render 能跑完布局并抛出成环错误）：
+//   - CSSStyleSheet：render 引入 keyframes / 样式时会访问它
+//   - SVGElement 测量方法 getBBox / getComputedTextLength / getTotalLength
+// 只对 flowchart/graph 启用 render 校验；sequenceDiagram / stateDiagram 等在纯
+// jsdom 下 render 会报「Cannot read properties of null」等 DOM 局限，与本脚本职责
+// 无关，仍只走 parse（见 main()）。
+const _svgGlobs = ['Element', 'HTMLElement', 'SVGElement', 'SVGSVGElement', 'SVGGraphicsElement', 'Node'];
+for (const k of _svgGlobs) {
+  if (typeof window[k] !== 'undefined' && globalThis[k] === undefined) globalThis[k] = window[k];
+}
+if (typeof globalThis.CSSStyleSheet === 'undefined') {
+  globalThis.CSSStyleSheet = class {
+    cssRules = [];
+    insertRule() { return 0; }
+  };
+}
+for (const C of [globalThis.SVGElement, globalThis.SVGGraphicsElement, globalThis.Element]) {
+  if (!C) continue;
+  C.prototype.getBBox ??= function () { return { x: 0, y: 0, width: 0, height: 0 }; };
+  C.prototype.getComputedTextLength ??= function () { return 0; };
+  C.prototype.getTotalLength ??= function () { return 0; };
+}
 
 // —— <br> 规范性 / 合法性 lint ——
 // 目标：让长标签在预览下不挤成一长行（靠 <br> 在语义点断行），并统一换行写法。
@@ -173,8 +207,15 @@ async function main() {
       }
       try {
         await mermaid.parse(b.text);
+        // render 阶段校验：flowchart/graph 可能含「子图父链成环」等只在布局期
+        // 暴露的语义错误，parse 检测不到。sequenceDiagram/stateDiagram 等类型
+        // 在纯 jsdom 下 render 会报 DOM 局限误错，故仅对 flowchart/graph 做 render。
+        const isFlowchart = type === 'flowchart' || type === 'graph';
+        if (isFlowchart) {
+          await mermaid.render(`chk-${blockIndex}`, b.text);
+        }
         console.log(
-          `OK   [${src.name}:${startGlobal}-${endGlobal}] type=${type} #${blockIndex}`
+          `${isFlowchart ? 'OK  (parse+render)' : 'OK  (parse)'}   [${src.name}:${startGlobal}-${endGlobal}] type=${type} #${blockIndex}`
         );
         // <br> 规范性 lint（提示级，不导致失败）
         const warns = lintBr(b);
@@ -197,12 +238,12 @@ async function main() {
 
   if (failCount > 0) {
     console.log(
-      `\n校验结果：${failCount} 个 mermaid 块存在语法错误，请修复后重新运行；不保留渲染报错的图。${warnCount ? `（另有 ${warnCount} 条 [MERMAID-WARN] <br> 规范提示，见上）` : ''}`
+      `\n校验结果：${failCount} 个 mermaid 块存在语法/渲染错误，请修复后重新运行；不保留渲染报错的图。${warnCount ? `（另有 ${warnCount} 条 [MERMAID-WARN] <br> 规范提示，见上）` : ''}`
     );
     process.exitCode = 1;
   } else {
     console.log(
-      `\n校验结果：全部 mermaid 块语法通过。${warnCount ? `（含 ${warnCount} 条 [MERMAID-WARN] <br> 规范提示，见上）` : ''}`
+      `\n校验结果：全部 mermaid 块语法/渲染通过。${warnCount ? `（含 ${warnCount} 条 [MERMAID-WARN] <br> 规范提示，见上）` : ''}`
     );
     process.exitCode = 0;
   }
