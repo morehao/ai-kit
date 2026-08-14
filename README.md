@@ -9,16 +9,19 @@ ai-kit/
 ├── README.md                  # 本说明
 ├── LICENSE
 ├── commands/                  # opencode 斜杠指令
-│   ├── README.md              # 指令说明与安装
+│   ├── README.md              # 指令功能与用法说明
 │   └── git/                   # Git 相关指令
 │       ├── branch.md
 │       ├── message.md
 │       ├── pr.md
-│       ├── slim.md
 │       ├── commit-push.md
-│       └── slim.md
+│       ├── slim.md
+│       └── star.md
 └── skills/                    # opencode 技能
-    ├── git-kit/               # Git 工作流辅助（message/commit-push/branch/pr/slim）
+    ├── README.md              # 技能说明
+    ├── git-kit/               # Git 工作流辅助（message/commit-push/branch/pr/slim/star）
+    │   ├── references/        # 拆分的辅助逻辑
+    │   └── scripts/           # 附带脚本
     ├── project-insight/       # 开源项目深度解读
     │   ├── references/        # 拆分的辅助逻辑
     │   └── scripts/           # 附带脚本
@@ -31,12 +34,14 @@ ai-kit/
 
 | 路径 | 功能 |
 |------|------|
-| `skills/git-kit` | Git 工作流辅助工具包，按意图路由到生成 commit message、提交推送、创建/切换分支、创建/更新 PR/MR、仓库瘦身。 |
+| `skills/git-kit` | Git 工作流辅助工具包，按意图路由到生成 commit message、提交推送、创建/切换分支、创建/更新 PR/MR、仓库瘦身、分类 star。 |
 | `skills/project-insight` | 开源项目深度解读，产出每个论断都带可点开验证的真实源码引用（文件:行号），避免幻觉。 |
 | `skills/tech-design-proposal` | 编写完整的技术方案或架构设计文档。 |
 | `skills/svg-maker` | 生成自包含、纯 SVG 的架构图、流程图与概念图，可离线打开。 |
 
-每个 skill 目录下是一个 `SKILL.md`（含 frontmatter 定义触发条件），复杂逻辑可拆到 `references/` 子目录。
+每个 skill 目录下是一个 `SKILL.md`（含 frontmatter 定义触发条件），复杂逻辑可拆到 `references/` 子目录。详见 [skills/README.md](skills/README.md)。
+
+> **联动**：`skills/git-kit` 与 `commands/git/*` 命令共享同一实现，命令为委托壳，实际逻辑在 git-kit 的 `references/` 与 `scripts/` 中，二者互为两条入口（斜杠指令 / 自然语言触发）。
 
 ## commands —— 斜杠指令
 
@@ -49,14 +54,24 @@ ai-kit/
 | `commands/git/pr` | 基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab） |
 | `commands/git/commit-push` | 基于代码变更自动生成 commit message 并执行提交推送 |
 | `commands/git/slim` | 将当前 git 仓库瘦身为浅克隆，默认保留 30 天历史 |
+| `commands/git/star` | 拉取并分类自己的 GitHub star 仓库，输出中文分组清单 |
 
 详见 [commands/README.md](commands/README.md)。
 
 ## 用法说明
 
-这些命令与技能通过注册到 opencode 的配置目录来启用：
+这些命令与技能通过**软链接**注册到本机 opencode 配置目录来启用，不改动本仓库内的文件，便于后续 `git pull` 同步更新。配置目录默认为 `~/.config/opencode/`。
 
-- **skills** 注册到 opencode 的 skills 目录（默认位于 `~/.config/opencode/skills/`）。
-- **commands** 注册到 opencode 的 command 目录（默认位于 `~/.config/opencode/command/`），详见 `commands/README.md`。
+将本仓库路径替换到下方命令中的 `/path/to/ai-kit` 后执行：
 
-本仓库本身是可 git 管理的代码仓库；是否安装、以何种方式（软链接/复制）注册到本机 `~/.config/opencode/`，由你自行决定。
+```bash
+# 软链 skills 到 opencode 的 skills 目录
+ln -sfn /path/to/ai-kit/skills/* ~/.config/opencode/skills/
+
+# 软链 commands 到 opencode 的 command 目录
+ln -sfn /path/to/ai-kit/commands/git ~/.config/opencode/command/git
+```
+
+> 提示：若不希望跟随本仓库更新，也可改用复制方式（`cp -r`）；若本机已存在同名目录，软链接命令不会覆盖，需先手动处理。
+
+安装/卸载逻辑均只涉及本机配置目录（`~/.config/opencode/`），各子目录的 `README.md` 仅说明功能与用法，不重复安装步骤。
