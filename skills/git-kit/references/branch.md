@@ -24,12 +24,17 @@
 | 测试 | test |
 | 构建/依赖/脚本 | chore |
 | 性能/优化 | perf |
+| 热修复、紧急修复生产问题 | hotfix |
+| 发布、版本准备 | release |
+| 实验性尝试 | experiment |
+| 概念验证 | poc |
 
 ## 候选规则
 
 - 三个候选需风格/粒度不同（如简洁型 `feature/user-auth`、展开型 `feature/add-user-authentication`、侧重实现点型 `feature/login-secure-access`）
 - 均 kebab-case 小写、≤50 字符、简洁、概括意图
 - 不与仓库已有分支冲突（可先 `git branch --list` / `git branch -r` 核对，冲突则换名）
+- 实验/临时性工作优先用 `experiment/` 或 `poc/` 前缀，避免与正式功能混淆
 
 ## 示例
 
@@ -39,6 +44,8 @@
 | 修复登录页密码验证 bug | `fix/login-password-validation` / `fix/auth-password-check` / `fix/login-form-security` |
 | 重构订单模块代码结构 | `refactor/order-module` / `refactor/order-code-structure` / `refactor/order-domain` |
 | 优化首页加载性能 | `perf/homepage-load-speed` / `perf/index-page-performance` / `perf/front-page-render` |
+| 紧急修复线上登录崩溃 | `hotfix/login-crash` / `hotfix/auth-online-halt` / `hotfix/fix-login-meltdown` |
+| 发布 v2.0 版本准备 | `release/v2.0` / `release/2.0.0` / `release/version-2` |
 
 ## 验收标准
 
