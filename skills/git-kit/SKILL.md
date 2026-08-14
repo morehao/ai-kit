@@ -1,6 +1,6 @@
 ---
 name: git-kit
-description: Git 工作流辅助工具包。当用户要求生成 commit message、提交/推送代码变更、基于中文描述创建/切换分支、面向目标仓库创建/更新 PR/MR、或将当前 git 仓库瘦身为浅克隆时使用该 skill（含"写个commit信息""提交一下""开个分支做XX""提个PR""把仓库瘦身"等模糊表述）。
+description: Git 工作流辅助工具包。当用户要求生成 commit message、提交/推送代码变更、基于中文描述创建/切换分支、面向目标仓库创建/更新 PR/MR、将当前 git 仓库瘦身为浅克隆、或拉取并分类 GitHub star 仓库时使用该 skill（含"写个commit信息""提交一下""开个分支做XX""提个PR""把仓库瘦身""分类我的star"等模糊表述）。
 ---
 
 # Git Kit
@@ -20,6 +20,7 @@ Git 常见操作的统一入口。先按「意图路由」理解用户要做什�
 | `branch` | 分支 + 中文描述（"建个分支…""切到新分支…""开个分支做XX"） | `references/branch.md` |
 | `pr` | PR/MR/合并请求（"提PR""创建合并请求""更新MR"） | `references/pr.md` |
 | `slim` | 仓库瘦身/浅克隆/减小体积（"瘦身""清理git历史""shallow clone"） | `references/slim.md` |
+| `star-classify` | 拉取并分类自己 star 的 GitHub 仓库（"分类我的star""把我star的仓库整理成清单"） | `references/star-classify.md` |
 
 **模糊请求直接按意图覆盖交叉处理：**
 - 既说"提交"又说"推送" → `commit-push`（含生成 message）；只说"信息/文案"或明确"不提交" → `commit-message`。
@@ -42,3 +43,4 @@ Git 常见操作的统一入口。先按「意图路由」理解用户要做什�
 - `branch`：`read references/branch.md`。
 - `pr`：`read references/pr.md`。
 - `slim`：`read references/slim.md`，按其中指引运行 `scripts/git-slim.sh`（脚本为单一真源，与 `/git/slim` 命令共用）。
+- `star-classify`：`read references/star-classify.md`，按其中指引运行 `scripts/git-star.sh`。
