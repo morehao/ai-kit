@@ -9,7 +9,7 @@ description: 基于中文描述生成候选分支名，选择后从基准分支�
 
 ## 1. 确定基准分支
 先让用户选择从哪个基准创建新分支：
-- 默认 A：远端最新 `main`/`master`（探测 `origin/main` 与 `origin/master` 哪个存在；若当前本地对应分支非最新则先 `git pull origin <base>` 对齐最新）
+- 默认 A：远端最新 `main`/`master`（探测 `origin/main` 与 `origin/master` 哪个存在，取存在的那个作为基准引用 `origin/<base>`；不操作、不拉取本地对应分支）
 - 选项 B：当前分支
 
 ## 2. 生成候选分支名（3 个）
@@ -20,9 +20,9 @@ description: 基于中文描述生成候选分支名，选择后从基准分支�
 
 ## 4. 创建并切换分支
 在**同一个 bash 调用**中链式执行切换，选定的候选名记为 `<branchname>`：
-- 基准 A（远端 main/master，设基准为 `<base>`）：
+- 基准 A（远端 main/master，设基准引用为 `origin/<base>`）：
   ```
-  git fetch origin && git pull origin <base> && git switch -c <branchname> && echo "SWITCH_OK"
+  git fetch origin && git switch -c <branchname> origin/<base> && echo "SWITCH_OK"
   ```
 - 基准 B（当前分支）：
   ```
