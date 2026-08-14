@@ -11,7 +11,7 @@ ai-kit/
 ├── commands/                  # opencode 斜杠指令
 │   ├── README.md              # 指令说明与安装
 │   └── git/                   # Git 相关指令
-│       ├── branch-name.md
+│       ├── branch.md
 │       ├── message.md
 │       ├── pr.md
 │       ├── slim.md
@@ -42,7 +42,7 @@ ai-kit/
 
 | 路径 | 功能 |
 |------|------|
-| `commands/git/branch-name` | 将中文描述转换为 Conventional Commits 风格的分支名 |
+| `commands/git/branch` | 基于中文描述生成候选分支名，选择后从基准分支创建并切换 |
 | `commands/git/message` | 将中文描述转换为 Conventional Commits 格式的 commit message（纯生成，不提交） |
 | `commands/git/pr` | 基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab） |
 | `commands/git/commit-push` | 基于代码变更自动生成 commit message 并执行提交推送 |
