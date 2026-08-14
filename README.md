@@ -15,7 +15,8 @@ ai-kit/
 │       ├── commit.md
 │       ├── pr.md
 │       ├── slim.md
-│       └── smart-commit.md
+│       ├── commit-push.md
+│       └── slim.md
 └── skills/                    # opencode 技能
     ├── project-insight/       # 开源项目深度解读
     │   ├── references/        # 拆分的辅助逻辑
@@ -44,7 +45,7 @@ ai-kit/
 | `commands/git/branch-name` | 将中文描述转换为 Conventional Commits 风格的分支名 |
 | `commands/git/commit` | 将中文描述转换为 Conventional Commits 格式的 commit message |
 | `commands/git/pr` | 基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab） |
-| `commands/git/smart-commit` | 基于代码变更自动生成 commit message 并执行提交推送 |
+| `commands/git/commit-push` | 基于代码变更自动生成 commit message 并执行提交推送 |
 | `commands/git/slim` | 将当前 git 仓库瘦身为浅克隆，默认保留 30 天历史 |
 
 详见 [commands/README.md](commands/README.md)。
