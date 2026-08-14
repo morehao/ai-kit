@@ -18,6 +18,7 @@ ai-kit/
 │       ├── commit-push.md
 │       └── slim.md
 └── skills/                    # opencode 技能
+    ├── git-kit/               # Git 工作流辅助（message/commit-push/branch/pr/slim）
     ├── project-insight/       # 开源项目深度解读
     │   ├── references/        # 拆分的辅助逻辑
     │   └── scripts/           # 附带脚本
@@ -30,6 +31,7 @@ ai-kit/
 
 | 路径 | 功能 |
 |------|------|
+| `skills/git-kit` | Git 工作流辅助工具包，按意图路由到生成 commit message、提交推送、创建/切换分支、创建/更新 PR/MR、仓库瘦身。 |
 | `skills/project-insight` | 开源项目深度解读，产出每个论断都带可点开验证的真实源码引用（文件:行号），避免幻觉。 |
 | `skills/tech-design-proposal` | 编写完整的技术方案或架构设计文档。 |
 | `skills/svg-maker` | 生成自包含、纯 SVG 的架构图、流程图与概念图，可离线打开。 |
