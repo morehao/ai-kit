@@ -16,7 +16,7 @@ ai-kit/
 │       ├── pr.md
 │       ├── commit-push.md
 │       ├── slim.md
-│       └── star.md
+│       └── star-classify.md
 └── skills/                    # opencode 技能
     ├── git-kit/               # Git 工作流辅助（message/commit-push/branch/pr/slim/star）
     │   ├── references/        # 拆分的辅助逻辑
@@ -38,7 +38,7 @@ ai-kit/
 | `skills/tech-design-proposal` | 编写完整的技术方案或架构设计文档（含复杂度分级模板）。 |
 | `skills/svg-maker` | 生成自包含、纯 SVG 的架构图、流程图与概念图，可离线打开。 |
 
-每个 skill 目录下是一个 `SKILL.md`（含 frontmatter 定义触发条件），复杂逻辑可拆到 `references/` 子目录。
+每个 skill 目录下是一个 `SKILL.md`（含 frontmatter 定义触发条件），复杂逻辑可拆到 `references/` 子目录。`skills/` 下只放各技能的目录，不放置说明性文件（见下方"用法说明"）。
 
 > **联动**：`skills/git-kit` 与 `commands/git/*` 命令共享同一实现，命令为委托壳，实际逻辑在 git-kit 的 `references/` 与 `scripts/` 中，二者互为两条入口（斜杠指令 / 自然语言触发）。
 
@@ -53,7 +53,7 @@ ai-kit/
 | `commands/git/pr` | 基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab） |
 | `commands/git/commit-push` | 基于代码变更自动生成 commit message 并执行提交推送 |
 | `commands/git/slim` | 将当前 git 仓库瘦身为浅克隆，默认保留 30 天历史 |
-| `commands/git/star` | 拉取并分类自己的 GitHub star 仓库，输出中文分组清单 |
+| `commands/git/star-classify` | 拉取并分类自己的 GitHub star 仓库，输出中文分组清单 |
 
 详见 [commands/README.md](commands/README.md)。
 
@@ -64,15 +64,15 @@ ai-kit/
 将本仓库路径替换到下方命令中的 `/path/to/ai-kit` 后执行：
 
 ```bash
-# 软链 skills 到 opencode 的 skills 目录（遍历子目录，跳过 README.md）
-for d in /path/to/ai-kit/skills/*/; do
-  ln -sfn "$d" "$HOME/.config/opencode/skills/$(basename "$d")"
-done
+# 软链 skills 到 opencode 的 skills 目录
+ln -sfn /path/to/ai-kit/skills/* ~/.config/opencode/skills/
 
 # 软链 commands 到 opencode 的 command 目录
 ln -sfn /path/to/ai-kit/commands/git ~/.config/opencode/command/git
 ```
 
+> **约定**：`skills/` 下只放各技能的目录（如 `git-kit/`），不放置说明性文件。`skills/*` 会展开全部条目，若未来在 `skills/` 新增非目录文件，会一并被软链到 skills 目录，故请保持该约定。
+>
 > 提示：若不希望跟随本仓库更新，也可改用复制方式（`cp -r`）；若本机已在对应位置存在**同名真实目录**，需先手动移走再由命令建立软链。
 
 安装/卸载逻辑均只涉及本机配置目录（`~/.config/opencode/`）。`commands/README.md` 仅说明功能与用法，不重复安装步骤；本仓库的功能一览见本文档，各 skill 与指令的命名与目录结构见上文目录树。

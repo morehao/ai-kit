@@ -11,7 +11,7 @@
 | `git/pr` | 基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab） |
 | `git/commit-push` | 基于代码变更自动生成 commit message 并执行提交推送 |
 | `git/slim` | 将当前 git 仓库瘦身为浅克隆，默认保留 30 天历史 |
-| `git/star` | 拉取并分类自己的 GitHub star 仓库，输出中文分组清单 |
+| `git/star-classify` | 拉取并分类自己的 GitHub star 仓库，输出中文分组清单 |
 
 ### 与 git-kit skill 的联动
 
@@ -24,7 +24,7 @@
 | `git/pr` | `git-kit` pr |
 | `git/commit-push` | `git-kit` commit-push |
 | `git/slim` | `git-kit` slim |
-| `git/star` | `git-kit` star-classify |
+| `git/star-classify` | `git-kit` star-classify |
 
 若在对话中直接描述意图（如"写个 commit 信息""分支做 XX"），opencode 也可不经斜杠指令、直接触发 `git-kit` skill 完成同样的操作；命令与 skill 是同一实现的两条入口。
 
@@ -37,4 +37,4 @@
 - `/git/pr [目标分支]` → 基于差异创建/更新 PR/MR（默认探测 main/master）
 - `/git/commit-push` → 分析当前变更自动提交并推送
 - `/git/slim [天数]` → 瘦身当前仓库（默认保留 30 天历史）
-- `/git/star` → 拉取并分类自己的 GitHub star 仓库
+- `/git/star-classify` → 拉取并分类自己的 GitHub star 仓库
