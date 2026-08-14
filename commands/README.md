@@ -12,6 +12,16 @@
 | `git/commit-push` | 基于代码变更自动生成 commit message 并执行提交推送 |
 | `git/slim` | 将当前 git 仓库瘦身为浅克隆，默认保留 30 天历史 |
 
+这些 Git 指令均为**委托壳**：加载 `git-kit` skill 并落到对应分支执行，逻辑单一真源在 `skills/git-kit/references/` 与 `skills/git-kit/scripts/`，避免重复漂移。
+
+| 指令 | 委托的 skill 分支 |
+|------|-------------------|
+| `git/branch` | `git-kit` branch |
+| `git/message` | `git-kit` commit-message |
+| `git/pr` | `git-kit` pr |
+| `git/commit-push` | `git-kit` commit-push |
+| `git/slim` | `git-kit` slim |
+
 ### 使用方式
 
 在 opencode 对话中输入斜杠命令调用：
