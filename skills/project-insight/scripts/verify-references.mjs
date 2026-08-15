@@ -7,18 +7,24 @@
 //     其余参数  解读文档（本 skill 本次产出的全部 md）。
 //
 // 行为：
-//   - 提取每个展示引用 `[仓库相对路径/文件.ext:start-end]()`，并匹配其紧邻的指纹注释
-//     `<!-- snippet-base64:<base64> -->` 或 `<!-- snippet:<原文> -->`。
-//   - snippet 是模型从源码上下文逐字复制的可信指纹：base64 解码后整段在真实文件里搜索，
-//     算出真实行号，与文档标注的 start-end 比对。
+//   - 提取每个展示引用 `[仓库相对路径/文件.ext:start-end]()`，并匹配其紧邻的指纹注释。
+//   - 指纹 = 可信锚点行（模型从源码上下文**逐字复制**的原文），两种形式：
+//       · 首末行双锚点（推荐，产出物不再被整段源码淹没）：
+//           <!-- anchor: <区间首行原文> … <末行原文> -->
+//         （锚点行从行首截断 ≤80 字符、可去掉行首空白；单行区间只需一行锚点；
+//           含 `--` 等破坏 HTML 注释的字符时用 base64：<!-- anchor-base64:<b64> -->）
+//       · 旧格式（存量文档兼容，仍受支持）：<!-- snippet:<整段原文> --> / <!-- snippet-base64:<b64> -->
+//   - 锚点校验：先在声称的行号处做**精确位置校验**（第 start 行附近以首锚开头、第 end 行
+//     附近以末锚开头，双向验证），失败再全文件搜索锚点算出真实行号，与文档标注比对。
+//     旧 snippet 格式沿用整段搜索定位（见 locateSnippet）。
 //   - 无指纹注释时降级为弱校验：路径存在、文件可读、行号区间未越界即通过（标记 WEAK），
 //     提示补充指纹以获得精确行号验证。
 //   - 路径一律 realpath + commonpath 防穿越，越出 kb_repo 直接标记 TRAVERSAL。
 //
 // 输出状态（TRAVERSAL / MISMATCH / UNVERIFIED 任一即非 0 退出码，不静默放过）：
-//   [GROUNDER-OK]          指纹定位成功且行号吻合
-//   [GROUNDER-MISMATCH]    指纹定位成功但行号有偏差，打印真实行号供覆盖
-//   [GROUNDER-WEAK]        无指纹，弱校验通过（文件可读、行号未越界），建议补指纹
+//   [GROUNDER-OK]          锚点/指纹定位成功且行号吻合
+//   [GROUNDER-MISMATCH]    定位成功但行号有偏差，打印真实行号供覆盖
+//   [GROUNDER-WEAK]        无指纹/锚点不合格，弱校验通过（文件可读、行号未越界），建议补指纹
 //   [GROUNDER-UNVERIFIED]  路径不存在 / 文件不可读 / 指纹定位失败（等价 [UNVERIFIED]）
 //   [GROUNDER-TRAVERSAL]   路径越出 kb_repo，已阻止
 //
@@ -38,13 +44,104 @@ function isWithinRoot(repo, target) {
 // 路径部分可含字母数字 / . _ -；行号区间 start-end 为数字。
 const CITATION_RE = /\[([^\][]+?\.\w+):(\d+)-(\d+)\]\(\)/g;
 
-// —— 指纹注释：`<!-- snippet-base64:<b64> -->` 或 `<!-- snippet:<原文> -->` ——
-const FINGERPRINT_RE = /<!--\s*snippet-base64:([A-Za-z0-9+/=]+)\s*-->|<!--\s*snippet:([\s\S]*?)-->/g;
+// —— 指纹注释（新）：首末行双锚点 ——
+// `<!-- anchor:<首行原文> … <末行原文> -->` 或含 `--` 时 `<!-- anchor-base64:<b64> -->`
+const ANCHOR_RE = /<!--\s*anchor-base64:([A-Za-z0-9+/=]+)\s*-->|<!--\s*anchor:([\s\S]*?)-->/g;
+
+// —— 指纹注释（旧，存量文档兼容）：整段 snippet ——
+// `<!-- snippet:<整段原文> -->` 或 `<!-- snippet-base64:<b64> -->`
+const LEGACY_FINGERPRINT_RE = /<!--\s*snippet-base64:([A-Za-z0-9+/=]+)\s*-->|<!--\s*snippet:([\s\S]*?)-->/g;
 
 // 引用行之后允许出现指纹注释的最大间隔（行数）
 const FINGERPRINT_PROXIMITY = 2;
 
-// —— snippet 在真实源码里定位真实行号（1-based），复用 SKILL.md 的 locate_snippet 思路 ——
+// —— 锚点行质量底线：过短（<6 字符）或纯标点视为不合格，降级 WEAK ——
+function isUsableAnchor(a) {
+  if (!a) return false;
+  const t = a.trim();
+  return t.length >= 6 && /[A-Za-z0-9]/.test(t);
+}
+
+// —— 切分锚点注释内容为首锚 / 末锚（分隔符 ` … `，兼容英文 ` ... `）——
+// 单行区间或未写末锚时 last === first；各自只取第一行，防多行内容混入。
+function splitAnchors(content) {
+  let first = content;
+  let last = null;
+  for (const sep of [' … ', ' ... ']) {
+    const i = content.indexOf(sep);
+    if (i !== -1) {
+      first = content.slice(0, i);
+      last = content.slice(i + sep.length);
+      break;
+    }
+  }
+  first = (first || '').split('\n')[0].trim();
+  last = last == null ? first : last.split('\n')[0].trim();
+  if (!last) last = first;
+  return [first, last];
+}
+
+// —— 字符偏移 → 1-based 行号 ——
+function lineOf(text, charIdx) {
+  return text.slice(0, charIdx).split('\n').length;
+}
+
+// —— 全文件搜索锚点片段，返回首个命中行的 1-based 行号（定位真实行号用）——
+function locateLine(text, frag) {
+  const t = frag.trim();
+  if (!t) return null;
+  const i = text.indexOf(t);
+  if (i === -1) return null;
+  return lineOf(text, i);
+}
+
+// —— 全文件搜索末锚的最后一个命中行（定位真实末行用）——
+function locateLineLast(text, frag) {
+  const t = frag.trim();
+  if (!t) return null;
+  const i = text.lastIndexOf(t);
+  if (i === -1) return null;
+  return lineOf(text, i);
+}
+
+// —— 双锚点校验：{ status: 'ok' | 'mismatch' | 'unverified' | 'weak-invalid' } ——
+// 精确位置校验：首锚命中 [docStart, docStart+2] 行窗、末锚命中 [docEnd-2, docEnd] 行窗
+// （容忍区间首/末行为纯括号等平凡行时取相邻非平凡行的情况）。
+// 位置校验失败 → 全文件搜索锚点算出真实行号（MISMATCH 供覆盖）；搜索失败 → UNVERIFIED。
+function verifyAnchor(fileText, cit) {
+  const { first, last } = cit.fingerprint;
+  const hasLast = last !== first;
+  if (!isUsableAnchor(first) || (hasLast && !isUsableAnchor(last))) {
+    return { status: 'weak-invalid' };
+  }
+  const lines = fileText.split('\n');
+  const s = cit.docStart - 1; // 0-based 首行
+  const e = cit.docEnd - 1;   // 0-based 末行
+  const inWindow = (lo, hi, anchor) => {
+    for (let i = lo; i <= hi; i++) {
+      const l = lines[i];
+      if (l != null && l.trimStart().startsWith(anchor)) return true;
+    }
+    return false;
+  };
+  const startHit = inWindow(s, s + 2, first);
+  const endHit = hasLast ? inWindow(e - 2, e, last) : null;
+  if (startHit && (endHit === null || endHit)) {
+    return { status: 'ok' };
+  }
+  const trueStart = locateLine(fileText, first);
+  if (trueStart == null) return { status: 'unverified' };
+  let trueEnd;
+  if (hasLast) {
+    const le = locateLineLast(fileText, last);
+    trueEnd = le != null && le >= trueStart ? le : trueStart + (cit.docEnd - cit.docStart);
+  } else {
+    trueEnd = trueStart + (cit.docEnd - cit.docStart);
+  }
+  return { status: 'mismatch', trueStart, trueEnd };
+}
+
+// —— 旧 snippet 格式在真实源码里定位真实行号（1-based），存量兼容 ——
 function locateSnippet(text, snippet) {
   snippet = snippet.replace(/\n+$/, '');
   if (!snippet) return null;
@@ -89,6 +186,43 @@ function safeResolve(repoRoot, relPath) {
   return { status: 'ok', path: real, reason: null };
 }
 
+// —— 收集全部指纹注释（anchor 与旧 snippet 统一列表，按行号排序）——
+function collectFingerprints(text) {
+  const out = [];
+  let m;
+  ANCHOR_RE.lastIndex = 0;
+  while ((m = ANCHOR_RE.exec(text)) !== null) {
+    const b64 = m[1];
+    const raw = m[2];
+    let content = null;
+    if (b64) {
+      try { content = Buffer.from(b64, 'base64').toString('utf8'); } catch { content = null; }
+    } else if (raw !== undefined && !raw.includes('--')) {
+      content = raw.trim();
+    }
+    if (content) {
+      const [first, last] = splitAnchors(content);
+      out.push({ lineNo: lineOf(text, m.index), kind: 'anchor', first, last });
+    }
+  }
+  LEGACY_FINGERPRINT_RE.lastIndex = 0;
+  while ((m = LEGACY_FINGERPRINT_RE.exec(text)) !== null) {
+    const b64 = m[1];
+    const raw = m[2];
+    let snippet = null;
+    if (b64) {
+      try { snippet = Buffer.from(b64, 'base64').toString('utf8'); } catch { snippet = null; }
+    } else if (raw !== undefined && !raw.includes('--')) {
+      snippet = raw.trim();
+    }
+    if (snippet) {
+      out.push({ lineNo: lineOf(text, m.index), kind: 'legacy', snippet });
+    }
+  }
+  out.sort((a, b) => a.lineNo - b.lineNo);
+  return out;
+}
+
 // —— 解析文档：返回 [{ path, docStart, docEnd, lineNo, fingerprint }] ——
 function parseCitations(text) {
   const citations = [];
@@ -99,32 +233,17 @@ function parseCitations(text) {
       path: m[1],
       docStart: parseInt(m[2], 10),
       docEnd: parseInt(m[3], 10),
-      lineNo: text.slice(0, m.index).split('\n').length,
+      lineNo: lineOf(text, m.index),
       fingerprint: null,
     });
   }
-  // 指纹注释列表
-  const fingerprints = [];
-  FINGERPRINT_RE.lastIndex = 0;
-  while ((m = FINGERPRINT_RE.exec(text)) !== null) {
-    const b64 = m[1];
-    const raw = m[2];
-    let snippet = null;
-    if (b64) {
-      try { snippet = Buffer.from(b64, 'base64').toString('utf8'); } catch { snippet = null; }
-    } else if (raw !== undefined && !raw.includes('--')) {
-      snippet = raw.trim();
-    }
-    if (snippet) {
-      fingerprints.push({ lineNo: text.slice(0, m.index).split('\n').length, snippet });
-    }
-  }
+  const fingerprints = collectFingerprints(text);
   // 引用 ↔ 指纹配对：取"注释行号 ∈ [引用行, 引用行 + PROXIMITY]"的最先一个；已用即消耗。
   let fi = 0;
   for (const cit of citations) {
     while (fi < fingerprints.length && fingerprints[fi].lineNo < cit.lineNo) fi += 1;
     if (fi < fingerprints.length && fingerprints[fi].lineNo <= cit.lineNo + FINGERPRINT_PROXIMITY) {
-      cit.fingerprint = fingerprints[fi].snippet;
+      cit.fingerprint = fingerprints[fi];
       fi += 1;
     }
   }
@@ -202,25 +321,42 @@ async function main() {
       }
       // 3) 定位：有指纹 → 精确验证；无指纹 → 弱校验
       if (cit.fingerprint) {
-        const loc = locateSnippet(fileText, cit.fingerprint);
-        if (!loc) {
-          unverifiedCount += 1;
-          console.log(`[GROUNDER-UNVERIFIED] ${display} —— snippet 在源码中定位失败，请人工复核（保留原样并标 [UNVERIFIED]）`);
-          continue;
-        }
-        if (loc.start === cit.docStart && loc.end === cit.docEnd) {
-          okCount += 1;
-          console.log(`[GROUNDER-OK] ${display} —— 行号吻合`);
+        if (cit.fingerprint.kind === 'anchor') {
+          const res = verifyAnchor(fileText, cit);
+          if (res.status === 'ok') {
+            okCount += 1;
+            console.log(`[GROUNDER-OK] ${display} —— 首末行锚点双向验证通过`);
+          } else if (res.status === 'mismatch') {
+            mismatchCount += 1;
+            console.log(`[GROUNDER-MISMATCH] ${display} → 真实行号 ${res.trueStart}-${res.trueEnd}，请用真实行号覆盖文档标注`);
+          } else if (res.status === 'weak-invalid') {
+            weakCount += 1;
+            console.log(`[GROUNDER-WEAK] ${display} —— 锚点过短（<6 字符）或纯标点，仅弱校验通过；请用 ≥6 字符、含标识符的行作锚点`);
+          } else {
+            unverifiedCount += 1;
+            console.log(`[GROUNDER-UNVERIFIED] ${display} —— 锚点在源码中定位失败，请人工复核（保留原样并标 [UNVERIFIED]）`);
+          }
         } else {
-          mismatchCount += 1;
-          console.log(`[GROUNDER-MISMATCH] ${display} → 真实行号 ${loc.start}-${loc.end}，请用真实行号覆盖文档标注`);
+          const loc = locateSnippet(fileText, cit.fingerprint.snippet);
+          if (!loc) {
+            unverifiedCount += 1;
+            console.log(`[GROUNDER-UNVERIFIED] ${display} —— snippet 在源码中定位失败，请人工复核（保留原样并标 [UNVERIFIED]）`);
+            continue;
+          }
+          if (loc.start === cit.docStart && loc.end === cit.docEnd) {
+            okCount += 1;
+            console.log(`[GROUNDER-OK] ${display} —— 行号吻合（旧 snippet 格式）`);
+          } else {
+            mismatchCount += 1;
+            console.log(`[GROUNDER-MISMATCH] ${display} → 真实行号 ${loc.start}-${loc.end}，请用真实行号覆盖文档标注`);
+          }
         }
       } else {
         // 弱校验：文件可读 + 行号区间未越界
         const lineCount = fileText.split('\n').length;
         if (cit.docStart >= 1 && cit.docEnd <= lineCount) {
           weakCount += 1;
-          console.log(`[GROUNDER-WEAK] ${display} —— 无指纹注释，仅弱校验通过（文件可读、行号未越界）；建议为该引用补充指纹以获得精确行号验证`);
+          console.log(`[GROUNDER-WEAK] ${display} —— 无指纹注释，仅弱校验通过（文件可读、行号未越界）；建议为该引用补充首末行锚点以获得精确行号验证`);
         } else {
           unverifiedCount += 1;
           console.log(`[GROUNDER-UNVERIFIED] ${display} —— 无指纹注释且行号区间越界文件行数（${lineCount} 行），请人工复核`);
