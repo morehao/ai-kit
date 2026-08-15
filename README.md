@@ -15,11 +15,12 @@ ai-kit/
 │       ├── message.md
 │       ├── pr-create.md
 │       ├── pr-merge.md
+│       ├── tag.md
 │       ├── commit-push.md
 │       ├── slim.md
 │       └── star-classify.md
 └── skills/                    # opencode 技能
-    ├── git-kit/               # Git 工作流辅助（message/commit-push/branch/pr-create/pr-merge/slim/star）
+    ├── git-kit/               # Git 工作流辅助（message/commit-push/branch/pr-create/pr-merge/tag/slim/star）
     │   ├── references/        # 拆分的辅助逻辑
     │   └── scripts/           # 附带脚本
     ├── project-insight/       # 开源项目深度解读
@@ -34,7 +35,7 @@ ai-kit/
 
 | 路径 | 功能 |
 |------|------|
-| `skills/git-kit` | Git 工作流辅助工具包，按意图路由到生成 commit message、提交推送、创建/切换分支、创建/更新 PR/MR、按编号合并 PR/MR 并回主干更新、仓库瘦身、分类 star。 |
+| `skills/git-kit` | Git 工作流辅助工具包，按意图路由到生成 commit message、提交推送、创建/切换分支、创建/更新 PR/MR、按编号合并 PR/MR 并回主干更新、给分支打版本标签并推送、仓库瘦身、分类 star。 |
 | `skills/project-insight` | 开源项目深度解读，产出每个论断都带可点开验证的真实源码引用（文件:行号），避免幻觉。 |
 | `skills/tech-design-proposal` | 编写完整的技术方案或架构设计文档（含复杂度分级模板）。 |
 | `skills/svg-maker` | 生成自包含、纯 SVG 的架构图、流程图与概念图，可离线打开。 |
@@ -53,6 +54,7 @@ ai-kit/
 | `commands/git/message` | 将中文描述转换为 Conventional Commits 格式的 commit message（纯生成，不提交） |
 | `commands/git/pr-create` | 基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab） |
 | `commands/git/pr-merge` | 按编号合并 PR/MR，删除原分支，切回主干并更新代码（自动识别 gh/glab） |
+| `commands/git/tag` | 查看最新 tag 与来源分支，选择要打 tag 的分支与版本号，构建注记 tag 并推送 |
 | `commands/git/commit-push` | 基于代码变更自动生成 commit message 并执行提交推送 |
 | `commands/git/slim` | 将当前 git 仓库瘦身为浅克隆，默认保留 30 天历史 |
 | `commands/git/star-classify` | 拉取并分类自己的 GitHub star 仓库，输出中文分组清单 |

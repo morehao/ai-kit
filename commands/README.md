@@ -10,6 +10,7 @@
 | `git/message` | 将中文描述转换为 Conventional Commits 格式的 commit message（纯生成，不提交） |
 | `git/pr-create` | 基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab） |
 | `git/pr-merge` | 按编号合并 PR/MR，删除原分支，切回主干并更新代码（自动识别 gh/glab） |
+| `git/tag` | 查看最新 tag 与来源分支，选择要打 tag 的分支与版本号，构建注记 tag 并推送 |
 | `git/commit-push` | 基于代码变更自动生成 commit message 并执行提交推送 |
 | `git/slim` | 将当前 git 仓库瘦身为浅克隆，默认保留 30 天历史 |
 | `git/star-classify` | 拉取并分类自己的 GitHub star 仓库，输出中文分组清单 |
@@ -24,6 +25,7 @@
 | `git/message` | `git-kit` commit-message |
 | `git/pr-create` | `git-kit` pr-create |
 | `git/pr-merge` | `git-kit` pr-merge |
+| `git/tag` | `git-kit` tag |
 | `git/commit-push` | `git-kit` commit-push |
 | `git/slim` | `git-kit` slim |
 | `git/star-classify` | `git-kit` star-classify |
@@ -38,6 +40,7 @@
 - `/git/message <中文描述>` → 生成 commit message
 - `/git/pr-create [目标分支]` → 基于差异创建/更新 PR/MR（默认探测 main/master）
 - `/git/pr-merge [编号]` → 合并 PR/MR（无编号时探测当前分支关联的 PR/MR 并确认），删除原分支，切回主干并更新（默认 squash）
+- `/git/tag [tag名或分支名]` → 探测最新 tag 与来源分支，选择分支与版本号后打注记 tag 并推送
 - `/git/commit-push` → 分析当前变更自动提交并推送
 - `/git/slim [天数]` → 瘦身当前仓库（默认保留 30 天历史）
 - `/git/star-classify` → 拉取并分类自己的 GitHub star 仓库
