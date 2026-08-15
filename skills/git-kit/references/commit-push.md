@@ -12,6 +12,7 @@
 
 ## 注意事项
 
+- **禁止约束**：当前分支为 `main` 时不允许执行提交，直接停止并报告（`git branch --show-current` 确认），避免误提交到主干
 - message 内不要包含双引号 `"`，避免破坏 `git commit -m "..."` 的引号配对
 - 若 `git commit` 报 `nothing to commit`（工作区无变更）或 `git add` 无内容，如实报告当前状态，不继续提交
 
