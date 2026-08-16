@@ -1,7 +1,7 @@
-# agent 类型规格（agent）
+# ai-agent 类型规格（ai-agent）
 
-> 适用于：智能体 / agent 框架 / 多智能体编排 类项目。
-> 判定信号见 SKILL.md「类型判定与分流」；本规格在通用默认规格（`_default.md`）基础上**追加** agent 特有要求，不得放宽通用铁律（真源验证 / mermaid 校验 / kb_repo 判定 / 增量铁律 / 写作规范 / 质量红线 / 索引同步 / 规模门控 / 数据模型探测）。
+> 适用于：智能体 / AI Agent / agent 框架 / 多智能体编排 类项目。
+> 判定信号见 [../dimension-triggers.md](../dimension-triggers.md)「类型判定与分流」；本规格在通用默认规格（[_default.md](_default.md)）基础上**追加** ai-agent 特有要求，不得放宽通用铁律（真源验证 / mermaid 校验 / kb_repo 判定 / 增量铁律 / 写作规范 / 质量红线 / 索引同步 / 规模门控 / 数据模型探测）。可叠加：framework（对外暴露扩展接口时）。
 
 ## 固定结构块（硬规格）
 
@@ -10,7 +10,7 @@
 通用产出形态 / 分文件判定 / 信息密度分配 / 索引约定见 [_default.md](_default.md)，本规格仅追加 agent 特有要求：
 
 - 必拆子文档候选（命中并够深才拆，主题语义命名、无 `01-` 序号前缀）：
-  - `memory-system.md` / `memory.md`：记忆机制（见必含要素块；对应 SKILL.md「类型驱动的关注面触发判据」第 3 条：智能体必须体现记忆机制，示例即 `memory-system.md` / `memory.md`）
+  - `memory-system.md` / `memory.md`：记忆机制（见必含要素块；对应 [../dimension-triggers.md](../dimension-triggers.md)「触发判据」第 3 条：智能体必须体现记忆机制，示例即 `memory-system.md` / `memory.md`）
   - `tool-calling.md`：工具调用与 Function/Tool 协议（工具 schema、注册/执行、错误传播、结果回注）
   - `agent-loop.md` / `orchestration.md`：主 Agent 循环 / 多 Agent 协作与任务编排（作为独立关注面够深时拆此篇）
   - `skill-system.md` / `skills.md`：Skill/技能体系（见必含要素块）
@@ -26,9 +26,9 @@
 
 ## 必含要素块（硬规格）
 
-在通用必含要素清单（`_default.md`：根因 / 概览 / 架构 / 链路 / 深挖 / 全局关联 / 真源引用）之外，agent 类**必须**额外覆盖以下硬规格；可放任意标题任意顺序，顺序交给叙事主线，但逐项齐全才算完成：
+在通用必含要素清单（`_default.md`：根因 / 概览 / 架构 / 链路 / 深挖 / 全局关联 / 真源引用）之外，ai-agent 类**必须**额外覆盖以下硬规格；可放任意标题任意顺序，顺序交给叙事主线，但逐项齐全才算完成：
 
-- **记忆机制**：分层记忆（curated/episodic/prospective）、上下文压缩 / compaction、检索策略、持久化。（每条论断带 `文件:行号`；核心链路命中「强制图位清单」即给 `sequenceDiagram`/`graph`，如"从检索到回注上下文"的时序，不写纯文字长段）
+- **记忆机制**：分层记忆（curated/episodic/prospective）、上下文压缩 / compaction、检索策略、持久化。（每条论断带 `文件:行号`；核心链路命中「强制图位清单」（见 [../writing-guide.md](../writing-guide.md)）即给 `sequenceDiagram`/`graph`，如"从检索到回注上下文"的时序，不写纯文字长段）
 - **主 Agent 循环**：感知 / 推理 / 规划 / 行动 的循环结构、停止条件、token 预算（上下文耗尽时的行为、最大步数/最大调用上限）。
 - **工具调用**：工具定义 schema、函数执行、错误传播、结果回注上下文（谁注册/校验工具、调用失败的传播链、结果如何写回对话与记忆）。
 - **会话 / 任务状态**：会话持久化、任务级状态、多轮上下文管理（状态存哪里、何时读、失败如何恢复）。
