@@ -264,10 +264,93 @@ function readSources(filePaths) {
   return null;
 }
 
+/**
+ * --diff 增量预检：把"现有解读文档的引用 ↔ 当前源码"重解析为规划输入清单。
+ * 信息源单一 = 文档自身指纹锚点；不读任何外置清单文件。
+ * 状态语义如下：
+ *   STABLE       锚点精确匹配且行号吻合 → 论断可信，增量不重写该章节。
+ *   STALE        锚点能定位但行号已移动 → 按真实行号复核该论断章节。
+ *   UNRESOLVED   路径/锚点定位失败    → 证据已消失，需重新核实或移除该论断。
+ * 返回 allStable：全部 STABLE 为 true（供 noop 止损：无 STALE/UNRESOLVED 则无需增量）。
+ */
+function runDiff(repoReal, sources) {
+  let stableCount = 0;
+  let staleCount = 0;
+  let unresolvedCount = 0;
+  const lines = [];
+  for (const src of sources) {
+    const citations = parseCitations(src.text);
+    if (citations.length === 0) continue;
+    for (const cit of citations) {
+      const display = `${cit.path}:${cit.docStart}-${cit.docEnd}`;
+      const resolved = safeResolve(repoReal, cit.path);
+      if (resolved.status === 'traversal' || resolved.status === 'missing') {
+        unresolvedCount += 1;
+        lines.push(`- \`${display}\` → UNRESOLVED（文件缺失或越界，论断证据已消失，需重新核实或移除）`);
+        continue;
+      }
+      let fileText;
+      try {
+        fileText = readFileSync(resolved.path, 'utf8');
+      } catch {
+        unresolvedCount += 1;
+        lines.push(`- \`${display}\` → UNRESOLVED（文件不可读）`);
+        continue;
+      }
+      if (!cit.fingerprint) {
+        unresolvedCount += 1;
+        lines.push(`- \`${display}\` → UNRESOLVED（无指纹注释，无法确认真伪，需人工复核）`);
+        continue;
+      }
+      if (cit.fingerprint.kind === 'legacy') {
+        const loc = locateSnippet(fileText, cit.fingerprint.snippet);
+        if (!loc) {
+          unresolvedCount += 1;
+          lines.push(`- \`${display}\` → UNRESOLVED（snippet 定位失败）`);
+        } else if (loc.start === cit.docStart && loc.end === cit.docEnd) {
+          stableCount += 1;
+          lines.push(`- \`${display}\` → STABLE`);
+        } else {
+          staleCount += 1;
+          lines.push(`- \`${display}\` → STALE（真实行号 ${loc.start}-${loc.end}，请以真实行号复核）`);
+        }
+        continue;
+      }
+      const res = verifyAnchor(fileText, cit);
+      if (res.status === 'ok') {
+        stableCount += 1;
+        lines.push(`- \`${display}\` → STABLE`);
+      } else if (res.status === 'mismatch') {
+        staleCount += 1;
+        lines.push(`- \`${display}\` → STALE（真实行号 ${res.trueStart}-${res.trueEnd}，请以真实行号复核该论断）`);
+      } else if (res.status === 'weak-invalid') {
+        stableCount += 1;
+        lines.push(`- \`${display}\` → STABLE-WEAK（锚点过短仅弱校验，建议补 ≥6 字符含标识符锚点）`);
+      } else {
+        unresolvedCount += 1;
+        lines.push(`- \`${display}\` → UNRESOLVED（锚点定位失败，需人工复核）`);
+      }
+    }
+  }
+  console.log('## 引用增量预检（verify-references.mjs --diff）');
+  lines.forEach((l) => console.log(l));
+  console.log(`\n预检汇总：STABLE=${stableCount} STALE=${staleCount} UNRESOLVED=${unresolvedCount}`);
+  return unresolvedCount === 0 && staleCount === 0;
+}
+
 async function main() {
-  const args = process.argv.slice(2).filter((a) => a !== '--');
+  let args = process.argv.slice(2).filter((a) => a !== '--');
+  let diffMode = false;
+  if (args[0] === '--diff') {
+    diffMode = true;
+    args = args.slice(1);
+  }
   if (args.length < 1) {
-    console.error('用法：node verify-references.mjs <kb_repo> [解读.md ...]（解读.md 省略时从 stdin 读）');
+    console.error(
+      diffMode
+        ? '用法：node verify-references.mjs --diff <kb_repo> [解读.md ...]'
+        : '用法：node verify-references.mjs <kb_repo> [解读.md ...]（解读.md 省略时从 stdin 读）',
+    );
     process.exit(2);
   }
   const repoRoot = resolve(args[0]);
@@ -290,6 +373,12 @@ async function main() {
   let mismatchCount = 0;
   let unverifiedCount = 0;
   let traversalCount = 0;
+
+  if (diffMode) {
+    const allStable = runDiff(repoReal, sources);
+    stdout.write('', () => process.exit(allStable ? 0 : 1));
+    return;
+  }
 
   for (const src of sources) {
     const citations = parseCitations(src.text);
