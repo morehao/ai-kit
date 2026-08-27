@@ -44,6 +44,12 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 
 **临时分析判别：** 默认按"入库"规范执行（完整目录树 + 索引同步）。若用户只要一段临场解读、明确不落进知识库仓库，产出主体解读即可，并主动告知"本次未做索引同步、未做落地目录判定"；否则默认走完整入库流程（含 `kb_repo` 判定，见 [references/kb-repo-rules.md](references/kb-repo-rules.md)）。
 
+**范围锁定（两则）：**
+- 索引同步只增改**本项目**的索引条目与被改页面，不顺手重排/改写
+  `{分类}/README.md` 或顶层 `README.md` 里其他项目的条目格式。
+- 解读产物（`{分类}/{项目}/…`）**绝不落入被分析的源码仓库根内**；即使
+  `kb_repo` 判定因排除信号走到"用户选择"分支，也不得把解读 md 写进 `source_repo`。
+
 ## 执行流程主干（按需加载路由）
 
 每步的完整细则在对应 references 文件，命中即按需加载；**SKILL.md 只保留路由 + 每次必用的铁律与引用格式**。
@@ -60,6 +66,20 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 | 7 真源 + Mermaid 校验 | 对本次产出全部 md 跑 `verify-references.mjs` 与 `check-mermaid.mjs`，非 0 退出码视为未通过 | [references/grounding-guide.md](references/grounding-guide.md) |
 | 8 索引同步（收尾三步） | 建项目 README → 更新 `{分类}/README.md` 索引 → 必要时顶层 README 加分类 | [references/kb-repo-rules.md](references/kb-repo-rules.md) |
 | 9 提交边界 | 列出变更文件清单，不代为 git commit | — |
+
+## 文档元数据（frontmatter）纪律
+
+每篇解读文档（README 与各关注面子文档）开头统一放轻量 YAML frontmatter，作为可检索的元数据头：
+- **必写 / 推荐** `type`（短描述性概念类型）、`title`（人类可读标题）、
+  `description`（一两句、面向检索优化的摘要）、`tags`（稳定英文标签）。
+  `description` 专门服务知识库检索——决定读者在索引能否命中这篇，务必
+  具体、含项目与关注面关键词。
+- **不写** 时间戳、版本、`文件:行号` 计数等"由程序/定期维护生成"的字段；
+  留给外部索引，解读作者不臆造。
+- **保留** 已有用户扩展字段：增量时未知字段原样保留，仅事实/正文变化才改。
+
+> frontmatter 是文档自带的 YAML 头，不是外置清单文件——不违背本 skill
+> "信息源单一 = 文档自身"的约束。
 
 ## 引用格式（高频必用；完整细则见 [references/grounding-guide.md](references/grounding-guide.md)）
 
@@ -96,6 +116,11 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 - [ ] **强制图位已用图**：启动流程 / 核心请求链路 / 连接-会话生命周期 / 跨模块时序命中即给 Mermaid（[references/writing-guide.md](references/writing-guide.md)「强制图位清单」）；数据模型文档已有 ER 图 + 每张核心表字段表；每篇子文档 ≥1 张本关注面核心链路图
 - [ ] 标题为语义式（`##` 层级 + 语义词），无 `## 0.` / `## 1.` / `## 第N部分` 数字前缀；正文中文为主、英文引用必配中文解读，无孤立纯英文段落
 - [ ] 索引同步：已落在 `kb_repo` 并更新 `{分类}/README.md`，必要时顶层 `README.md`
+- [ ] **frontmatter 元数据合规**：每篇解读文档带 `type/title/description`
+      （+可选 `tags`），`description` 面向检索；无线索自造时间戳/版本等程序
+      字段；增量时保留未知扩展字段
+- [ ] **引用增量门禁（增量模式）**：动笔前已跑 `verify-references.mjs --diff`，
+      STALE/UNRESOLVED 对应章节才改、STABLE 章节原文保留；无改依据时已止损
 - [ ] **所有代码引用经程序重定位验证**（`verify-references.mjs` 全过，非记忆行号）；定位失败已标 `[UNVERIFIED]` 并汇总列出；路径为仓库相对路径且未脱离仓库根（[references/grounding-guide.md](references/grounding-guide.md)）
 - [ ] **指纹注释仅首末行锚点**：每条引用后至多含区间首行 + 末行两行原文（各 ≤1 行、截断 ≤80 字符），无整段代码注释；锚点逐字复制、含 `--` 用 base64
 - [ ] **所有 Mermaid / SVG 图可渲染、不报错，且无 mermaid + svg 重复**；Mermaid 块已跑 `scripts/check-mermaid.mjs` 全 `OK`，`[MERMAID-WARN]`（`<br>` 换行 lint）已收敛为 0

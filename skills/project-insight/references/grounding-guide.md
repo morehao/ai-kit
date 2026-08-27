@@ -57,8 +57,13 @@ Gateway 把"连接为什么失败"变成可观测：close 时把 `closeCause`/`p
 ```bash
 # 在 skill 的 scripts/ 目录下（依赖 mermaid + jsdom，首次需 npm install）
 node scripts/verify-references.mjs <kb_repo> <解读.md>...   # 代码引用：五态输出，MISMATCH 覆盖行号、UNVERIFIED 标记保留、TRAVERSAL 必须修复
+node scripts/verify-references.mjs --diff <kb_repo> <解读.md>...   # 增量预检：输出 STABLE/STALE/UNRESOLVED 清单 + 汇总；全 STABLE 退出码 0
 node scripts/check-mermaid.mjs <解读.md>...                  # Mermaid 图：任一 [MERMAID-ERROR] 修复至全 OK，[MERMAID-WARN] 收敛为 0
 ```
+
+> `--diff` 用于增量动笔前：把现有解读引用的真实状态（STABLE / STALE 带真实
+> 行号 / UNRESOLVED）作为增量差异依据与 noop 止损输入；据此只改 STALE /
+> UNRESOLVED 对应章节（完整流程见 flow-incremental.md）。
 
 - 依赖 `mermaid`、`jsdom`（`node_modules` 被 gitignore，不入库）；本机若用 `cp -r` 复制注册而非软链，复制后要在副本的 `scripts/` 重装。
 - 校验用 node 直跑（不是打包器）。
