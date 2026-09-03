@@ -15,6 +15,7 @@
   - `agent-loop.md` / `orchestration.md`：主 Agent 循环 / 多 Agent 协作与任务编排（作为独立关注面够深时拆此篇）
   - `skill-system.md` / `skills.md`：Skill/技能体系（见必含要素块）
   - `mcp.md`：MCP 与外部能力接入层（见必含要素块）
+  - `acp.md`：宿主接入协议层（仅 agent 对外提供 client–agent 服务时；见必含要素块）
   - `runtime.md`：运行时引擎（见必含要素块）
 - 若 agent 项目自带会话/元数据存储，仍须跑「数据模型主动探测」并按五要素独立成 `data-model.md`（判定由程序化信号决定，不由"是否业务应用"的主观印象跳过；五要素细则见 [data-model-guide.md](../data-model-guide.md)）。
 - 拆出子文档后按其索引约定回写（见 `_default.md`）。
@@ -34,16 +35,18 @@
 - **会话 / 任务状态**：会话持久化、任务级状态、多轮上下文管理（状态存哪里、何时读、失败如何恢复）。
 - **Skill 体系**：技能如何定义与编排（schema/清单）、发现与加载机制、内容如何注入系统上下文（Prompt 拼接位置与优先级）、与内置工具/插件的关系、命中触发判据。能力点足以覆盖才独立 `skill-system.md`；项目无 skill 概念则标注"该方向不适用，不硬凑"。
 - **MCP / 外部能力接入**：采用的 transport（stdio / HTTP / SSE 等）、客户端-服务端角色划分、工具/资源/提示三元协议如何映射进内部工具调用、错误与时序治理（超时 / 重连 / 流式半开）。内置工具无 MCP 时标注不适用；够深入时可独立 `mcp.md`。
+- **宿主接入协议（ACP，agent 对外提供 client–agent 服务时必含）**：当项目以宿主（client）→ agent 形态对外暴露——被编辑器/宿主应用拉起（agent server / CLI 子进程协议），判定信号：README/源码含 "Agent Client Protocol"、`acp/`、agent server、JSON-RPC over WebSocket + session 生命周期——才覆盖：client/agent 角色划分与各自持有的状态、session 生命周期（`session/new`、prompt、流式 update、abort 等；方法名/版本按项目实际演进组织，不背书外部规范版本号）、transport 选择（stdio / TCP）与进程/连接生命周期、工具调用与权限请求在宿主与 agent 间的往返（谁声明、谁执行、宿主侧授权/审批点）、会话保存与恢复、取消与错误语义。纯库内编排、无宿主侧协议则标注"该方向不适用，不硬凑"。层次区分：MCP = agent 接**能力**（工具/资源），ACP = 宿主接 **agent 产品**，两者常并存（同一 agent server 既是 MCP client 又是 ACP server）；够深可独立 `acp.md`（项目自有叫法优先，如 `agent-server.md`）。
 - **Runtime（运行时）**：承载 Agent 循环的引擎层职责——请求分发、会话状态机、授权 / 沙箱边界、上下文与 token 预算管理、进程 / 事件循环生命周期。刻意区别于「主 Agent 循环」：runtime 是策略的执行引擎，循环是策略本身。够深入时可独立 `runtime.md`。
 - **通信机制**：Agent 与工具 / MCP 服务端 / 多 Agent 之间的消息通信方式（IPC、stdin 协议、事件总线、流式），信任边界与错误传播。并入 runtime / mcp 叙述，不单独成篇。
 
 ## 自由纵深块（软区）
 
-- 「值得学什么」落点：Agent 如何做记忆分层的权衡、工具调用的可靠性设计（重试 / 超时 / 权限）、多 Agent 之间的通信与信任边界、Skill 的发现与注入机制、MCP 的 transport 与错误治理、运行时与主循环分离的职责边界。
+- 「值得学什么」落点：Agent 如何做记忆分层的权衡、工具调用的可靠性设计（重试 / 超时 / 权限）、多 Agent 之间的通信与信任边界、Skill 的发现与注入机制、MCP 的 transport 与错误治理、宿主接入协议（ACP）的 session 生命周期 / 权限往返 / transport 治理、运行时与主循环分离的职责边界。
 - 常见坑：
   - 把记忆系统写成表/清单而非设计——应讲检索策略与 compaction 权衡（Why>What），而不是罗列缓存项。
   - 只讲 What（用了什么模型）不讲 Why（为什么不提前缀总结件、为什么选这种上下文管理）。
   - 工具调用只写"支持哪些工具"，不讲调用可靠性（重试、超时、权限、结果回注失败时的处理）。
   - Skill/MCP 写成"支持哪些工具/技能"的清单而非设计——应讲命中触发、上下文注入、transport 与服务治理的权衡。
+  - 把宿主接入协议写成方法清单（罗列 session 方法名）而非设计——应讲 session 生命周期、工具与权限在宿主/agent 间的往返、transport 与进程治理；尤其不要把 ACP（宿主→agent）与 MCP（agent→工具）两层混为一谈。
   - 把 Runtime 与主循环混为一谈——应讲清引擎层（runtime）与策略层（循环）的分离，各自管什么。
-- 深挖指引：比较不同 agent 项目的记忆 / 上下文管理 / 工具调用方案，提炼可迁移模式；比较其 Skill 注入方式、MCP 接入的可靠性、运行时与主循环的耦合度；深度不足标 `[WIP]`/`TODO`，不硬凑。
+- 深挖指引：比较不同 agent 项目的记忆 / 上下文管理 / 工具调用方案，提炼可迁移模式；比较其 Skill 注入方式、MCP 接入的可靠性、宿主接入协议（ACP）的 session 与权限模型，及 ACP / MCP / A2A / AG-UI 的分层取舍、运行时与主循环的耦合度；深度不足标 `[WIP]`/`TODO`，不硬凑。

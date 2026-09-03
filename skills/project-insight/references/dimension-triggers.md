@@ -35,7 +35,7 @@
 |----------|-----------|
 | 可部署服务（Docker/常驻/云/安装器） | 单独「部署文档」：`docker-compose.yml` / `Dockerfile` / `systemd` / `launchd` / `fly.toml` / `render.yaml` 等形态 + 运维要点 |
 | 有数据存储 / 库框架自带系统表 | 单独「数据模型」文档（判据见下方第 1 条，程序化探测决定，写五要素，细则见 [data-model-guide.md](data-model-guide.md)） |
-| 智能体 (Agent) | 须体现 agent 关注面：记忆/上下文机制、主 Agent 循环、工具调用、Skill 体系、MCP 接入、Runtime、会话状态（详见 [ai-agent.md](project-types/ai-agent.md)） |
+| 智能体 (Agent) | 须体现 agent 关注面：记忆/上下文机制、主 Agent 循环、工具调用、Skill 体系、MCP 接入、宿主接入协议（ACP，对外提供 client–agent 服务时）、Runtime、会话状态（详见 [ai-agent.md](project-types/ai-agent.md)） |
 | 较长业务流程 | `sequenceDiagram` 时序图体现完整业务链路（跨模块数据流/事件时序），不画单模块局部流；入「架构深读」链路节或 `flow-*.md` |
 | Web/API 框架 | 生命周期 / 中间件链 / 路由表 / 扩展点机制（如 Koa 洋葱模型、Hono 路由基数树） |
 | CLI 工具 | 参数解析 / 插件系统 / 配置管理 / 退出码与错误约定 |
@@ -60,5 +60,5 @@
 
 1. **有数据存储，或作为库/工具形态自带系统表与会话/元数据存储** → 单独「数据模型」文档：核心表/实体关系、存储选型与理由、Schema 演进策略（如 JSON blob + 提升列 / 迁移）、读写路径。文件名统一 `data-model.md`（存量文档如已用 `db-design.md` 则沿用原名，新文档一律 `data-model.md`）。**必含内容与写法见 [data-model-guide.md](data-model-guide.md)**（ER 图 + 每表字段表 / 存储选型 / 核心表设计 / 演进策略 / 读写路径）。注意：是否触发该判据由「数据模型主动探测」的程序化扫描信号决定，**不由「这项目是不是业务应用」的主观印象决定**——纯 library 框架只要自带系统表（如 go-admin 的 `goadmin_*`）、迁移（`migrations/`）、或 models 实体，同样属于数据模型关注面，须覆盖。
 2. **有较长业务流程** → 用 `sequenceDiagram` 时序图体现完整业务链路（跨模块/跨服务的数据流、事件时序），而非只画单模块局部流；放在「架构深读」的请求链路节或单独 `flow-*.md`。
-3. **智能体 (Agent) 相关** → 必须按 [ai-agent.md](project-types/ai-agent.md) 规格覆盖其全部必含关注面：记忆机制、主 Agent 循环、工具调用、Skill 体系、MCP 接入、Runtime、会话/任务状态、通信机制。示例文件名 `memory-system.md` / `memory.md` / `tool-calling.md` / `skill-system.md` / `mcp.md` / `runtime.md`。
+3. **智能体 (Agent) 相关** → 必须按 [ai-agent.md](project-types/ai-agent.md) 规格覆盖其全部必含关注面：记忆机制、主 Agent 循环、工具调用、Skill 体系、MCP 接入、宿主接入协议（ACP，仅当对外提供 client–agent 接入：agent server / CLI 子进程协议 / README 含 "Agent Client Protocol"；纯库内编排则标注不适用）、Runtime、会话/任务状态、通信机制。示例文件名 `memory-system.md` / `memory.md` / `tool-calling.md` / `skill-system.md` / `mcp.md` / `acp.md` / `runtime.md`。
 4. **语言惯用法命中**（语言维度表）→ 作为候选关注面独立成文（如 `goroutine-model.md`/`ownership-lifetimes.md`）或并入架构深读的相关小节；写法：每个惯用法论断带 `文件:行号` + "为什么选这个模型"的权衡，落在具体设计语境，不写成语言教科书。
