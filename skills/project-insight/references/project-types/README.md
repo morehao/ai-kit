@@ -7,7 +7,7 @@
 | 类型 | 规格文件 | 适用 | 必拆子文档候选（命中并够深才拆） |
 |------|---------|------|--------------------------------|
 | 通用默认 | [_default.md](_default.md) | 无法判定为任何具体类型，或无需类型特化时回落 | —（分文件判定见 [../flow-new.md](../flow-new.md)） |
-| ai-agent | [ai-agent.md](ai-agent.md) | 智能体 / AI Agent / agent 框架 / 多智能体编排 | `memory-system.md`/`memory.md`、`tool-calling.md`、`agent-loop.md`/`orchestration.md`、`skill-system.md`、`mcp.md`、`runtime.md` |
+| ai-agent | [ai-agent.md](ai-agent.md) | 智能体 / AI Agent / agent 框架 / 多智能体编排 | `memory-system.md`/`memory.md`、`tool-calling.md`、`agent-loop.md`/`orchestration.md`、`skill-system.md`、`mcp.md`、`acp.md`、`runtime.md` |
 | admin | [admin.md](admin.md) | 后台管理系统 / 管理面板 / 内网运营平台 | `data-model.md`、`auth-rbac.md`、`deployment.md` |
 | framework | [framework.md](framework.md) | Web 框架 / SDK / 基础库 / CLI / 编译器 | `extension.md`、`api-design.md`、语言惯用法文档（如 `goroutine-model.md`） |
 | im | [im.md](im.md) | 即时通讯 / 消息系统 / 聊天 / 长连接网关 | `protocol.md`、`gateway.md`、`store.md` |

@@ -110,7 +110,7 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 - [ ] 多关注面项目已按关注面拆子文档，未把全部内容压进单个 README；README 含独立「子文档索引」专章列全 + 「核心模块导读表」每行就近内链，新增即回写
 - [ ] **已按类型规格加载并覆盖了对应关注面**：按 [references/project-types/README.md](references/project-types/README.md) 注册表加载对应类型规格，逐项覆盖其「必含要素块」；回落 `_default.md` 时已标注「按通用默认规格产出」；类型规格仅补充细化，未放宽任一通用铁律
 - [ ] **数据模型关注面已按「数据模型主动探测」判定**：跑过探测信号（`*.sql` / `migrations/` / models 实体 / ORM 建表入口），命中即按 [references/data-model-guide.md](references/data-model-guide.md) 五要素成文、未命中不硬凑
-- [ ] **类型触发项已覆盖**：可部署 → 部署文档（docker-compose / Dockerfile / systemd 等形态 + 运维要点）；长流程 → 跨模块 `sequenceDiagram`；智能体 → 记忆 / Agent 循环 / 工具调用 / Skill / MCP / Runtime / 会话状态（按 [references/project-types/ai-agent.md](references/project-types/ai-agent.md)）；命中语言惯用法维度 → 对应深层主题成文（落在设计语境 + `文件:行号`，非语言教科书）
+- [ ] **类型触发项已覆盖**：可部署 → 部署文档（docker-compose / Dockerfile / systemd 等形态 + 运维要点）；长流程 → 跨模块 `sequenceDiagram`；智能体 → 记忆 / Agent 循环 / 工具调用 / Skill / MCP / Runtime / 会话状态 / 宿主接入协议（ACP，agent 对外提供 client–agent 服务时；按 [references/project-types/ai-agent.md](references/project-types/ai-agent.md)）；命中语言惯用法维度 → 对应深层主题成文（落在设计语境 + `文件:行号`，非语言教科书）
 - [ ] 深度达标：关键论断含 Why / 权衡 / 对比（而非泛泛而谈），核心模块满足四要素可复现性（[references/analysis-guide.md](references/analysis-guide.md)）
 - [ ] **正文无整段贴码**：编码细节化为叙述 + `文件:行号`，代码块仅留承载设计的关键片段，无 `> [path] — 整段代码` 孤立块
 - [ ] **强制图位已用图**：启动流程 / 核心请求链路 / 连接-会话生命周期 / 跨模块时序命中即给 Mermaid（[references/writing-guide.md](references/writing-guide.md)「强制图位清单」）；数据模型文档已有 ER 图 + 每张核心表字段表；每篇子文档 ≥1 张本关注面核心链路图
