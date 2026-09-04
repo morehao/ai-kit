@@ -1,0 +1,4 @@
+# dsh-git-commands profile bundle patch：把插件注册进配置树（id/name 与插件名一致）。
+- insert:
+    - id: dsh-git-commands
+      name: 'dsh-git-commands'
