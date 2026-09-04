@@ -2,6 +2,14 @@
 
 本目录存放 opencode 自定义指令，安装方式见根目录 `README.md`。
 
+## 文件结构规范（对齐 opencode 源码）
+
+每条指令是一个 Markdown 文件，opencode 扫描配置目录下 `command/`、`commands/`（本项目软链注册到 `~/.config/opencode/command/git/`），文件名（含子目录）即命令名，如 `git/branch.md` → `/git/branch`。
+
+- frontmatter 仅允许官方 `ConfigCommandV1.Info` 字段：`description`、`agent`、`model`、`variant`、`subtask`（多余键会被忽略，但请勿添加）。
+- 正文是模板：`$ARGUMENTS` 整段替换为原始参数（官方 `issues.md`/`learn.md` 惯例为**独立成行裸写**，勿用反引号包裹——参数为空时会残留孤立反引号）；`$1`…`$N` 按位置替换（本项目未用）。模板不含占位符时，非空参数会追加到正文末尾。
+- 本项目命令均为**委托壳**：固定"# 任务"（声明由 git-kit 哪个分支实现 + 用 `skill` 工具加载 `git-kit`）+ "# 参数"（`$ARGUMENTS` + 参数语义说明）两段结构。
+
 ## Git 指令
 
 | 路径 | 功能 |
@@ -17,7 +25,7 @@
 
 ### 与 git-kit skill 的联动
 
-这些 Git 指令均为**委托壳**：加载 `git-kit` skill 并落到对应分支执行，逻辑单一真源在 `skills/git-kit/references/` 与 `skills/git-kit/scripts/`，避免重复漂移。
+这些 Git 指令均为**委托壳**（`git/*.md` 软链为 `/git/<子命令>`）：加载 `git-kit` skill 并落到对应分支执行，逻辑单一真源在 `skills/git-kit/references/` 与 `skills/git-kit/scripts/`，避免重复漂移。
 
 | 指令 | 委托的 skill 分支 |
 |------|-------------------|
