@@ -15,6 +15,24 @@ echo "==> dsh profile:  $DSH_PROFILE"
 # 1) skills -> $DSH_HOME_DIR/skills
 SKILLS_TARGET="$DSH_HOME_DIR/skills"
 mkdir -p "$SKILLS_TARGET"
+
+# 1.0) 清理残留软链：指向本仓库 skills/ 下已不存在目录（如 skill 重命名后）的悬空软链
+removed=0
+for target in "$SKILLS_TARGET"/*; do
+  [ -L "$target" ] || continue
+  real="$(readlink "$target")"
+  case "$real" in
+    "$REPO_ROOT"/skills/*)
+      if [ ! -d "$real" ]; then
+        rm "$target"
+        echo "清理悬空软链: $target -> $real（目标目录已不存在）"
+        removed=$((removed + 1))
+      fi
+      ;;
+  esac
+done
+[ "$removed" -gt 0 ] && echo "==> 已清理 $removed 个残留软链"
+
 linked=0
 for skill_dir in "$REPO_ROOT"/skills/*/; do
   [ -d "$skill_dir" ] || continue
