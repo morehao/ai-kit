@@ -1,6 +1,7 @@
 ---
 name: tech-design-proposal
 description: 编写完整的技术方案或架构设计文档。当用户需要设计系统架构、API 方案、技术选型、解决方案、数据库设计、微服务架构、性能优化方案等技术文档时使用此 skill。即使户仅表达为"设计一个方案"、"如何实现XX功能"、"XX系统搭建"等模糊需求，只要涉及技术架构思维都应主动触发此 skill。
+disable-model-invocation: true
 ---
 
 # 技术方案/架构设计文档生成器
