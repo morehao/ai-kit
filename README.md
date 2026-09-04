@@ -19,7 +19,7 @@ ai-kit/
 │       ├── commit-push.md
 │       ├── slim.md
 │       └── star-classify.md
-├── commands-dsh/              # dsh 插件：commands-opencode/git/* 的 dsh 原生命令入口（委托同一套逻辑）
+├── commands-dsh/              # dsh 插件：git-kit 的 dsh 原生斜杠命令入口（命令=意图表，与 opencode 入口共享 git-kit）
 │   ├── package.json
 │   ├── cordis.patch.yml
 │   ├── lib/index.js
@@ -33,7 +33,9 @@ ai-kit/
     ├── project-insight/       # 开源项目深度解读
     │   ├── references/        # 拆分的辅助逻辑
     │   └── scripts/           # 附带脚本
-    ├── tech-design-proposal/  # 技术方案/架构设计文档生成
+    ├── design-doc/            # 技术方案/设计文档生成（原 tech-design-proposal）
+    │   ├── references/        # 模板/类型/质量红线/收尾
+    │   └── scripts/           # Mermaid 校验薄壳（复用 project-insight 引擎）
     └── svg-maker/             # 自包含纯 SVG 图表生成
         └── references/
 ```
@@ -44,12 +46,12 @@ ai-kit/
 |------|------|
 | `skills/git-kit` | Git 工作流辅助工具包，按意图路由到生成 commit message、提交推送、创建/切换分支、创建/更新 PR/MR、按编号合并 PR/MR 并回主干更新、给分支打版本标签并推送、仓库瘦身、分类 star。 |
 | `skills/project-insight` | 开源项目深度解读，产出每个论断都带可点开验证的真实源码引用（文件:行号），避免幻觉。 |
-| `skills/tech-design-proposal` | 编写完整的技术方案或架构设计文档（含复杂度分级模板）。 |
+| `skills/design-doc`（原 `tech-design-proposal`） | 编写技术方案/设计文档：先按复杂度定模板档（轻量/标准/完整），再按方案类型（架构/API/数据模型/性能/安全）裁剪，内嵌 Mermaid 图可脚本校验，产出结构完整、可执行、可评审的 Markdown 文档。 |
 | `skills/svg-maker` | 生成自包含、纯 SVG 的架构图、流程图与概念图，可离线打开。 |
 
 每个 skill 目录下是一个 `SKILL.md`（含 frontmatter 定义触发条件），复杂逻辑可拆到 `references/` 子目录。`skills/` 下只放各技能的目录，不放置说明性文件（见下方"用法说明"）。
 
-> **联动**：`skills/git-kit` 与 `commands-opencode/git/*`（以及 dsh 侧的 `commands-dsh/`）共享同一实现，命令为委托壳，实际逻辑在 git-kit 的 `references/` 与 `scripts/` 中，互为多条入口（opencode 斜杠指令 / dsh 斜杠命令 / 自然语言触发）。
+> **联动**：`skills/git-kit` 是 Git 工作流逻辑与意图路由的唯一真源；`commands-opencode/git/*`（opencode 斜杠）与 `commands-dsh/`（dsh 斜杠）只是**命令入口**，声明「命令 → git-kit 分支」映射并交给 git-kit 执行，互为多条入口（opencode 斜杠指令 / dsh 斜杠命令 / 自然语言触发）。
 
 ## commands —— 斜杠指令
 
@@ -70,7 +72,7 @@ ai-kit/
 
 ## dsh 接入（可选）
 
-`commands-dsh/` 把 `commands-opencode/git/*` 同一套委托壳以 **dsh 原生命令**形式暴露：`/git-message`、`/git-commit-push`、`/git-branch`、`/git-pr-create`、`/git-pr-merge`、`/git-tag`、`/git-slim`、`/git-star-classify`。命令执行时**运行时读取**委托壳正文并注入当前会话，由 agent 按 git-kit 流程执行——与 opencode 入口共用实现、单一真源，编辑 `commands-opencode/` 或 `skills/git-kit/` 即同步生效（无需重装插件）。
+`commands-dsh/` 以 **dsh 原生命令**形式暴露 git-kit 工作流：`/git-message`、`/git-commit-push`、`/git-branch`、`/git-pr-create`、`/git-pr-merge`、`/git-tag`、`/git-slim`、`/git-star-classify`。插件是**自包含意图表**（一行声明 = 命令名 + git-kit 分支 key），命令执行时向当前 agent 注入一条加载 git-kit 并按其分支执行的指令——与 opencode 入口共用 git-kit、单一真源，编辑 `skills/git-kit/` 即同步生效（改插件 `lib/index.js` 需重启 dsh web）。
 
 一键接入（幂等，可重复执行）：
 

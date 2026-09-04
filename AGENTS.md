@@ -1,12 +1,13 @@
 # AGENTS.md
 
-本仓库集中管理个人 opencode 自定义扩展：`commands-opencode/`（斜杠指令）+ `skills/`（技能）。所有说明用**简体中文**。
+本仓库集中管理个人 AI 编码工具扩展：`commands-opencode/`（opencode 斜杠指令）+ `commands-dsh/`（dsh 斜杠命令插件）+ `skills/`（技能，opencode/dsh 共用）。所有说明用**简体中文**。
 
 ## 部署方式（任何修改前必读）
 
-这些扩展通过**软链接**注册到 `~/.config/opencode/`，本仓是唯一真源：
-- `ln -sfn <ai-kit>/skills/* ~/.config/opencode/skills/`
-- `ln -sfn <ai-kit>/commands-opencode/git ~/.config/opencode/command/git`
+- **opencode 侧**：通过**软链接**注册到 `~/.config/opencode/`，本仓是唯一真源：
+  - `ln -sfn <ai-kit>/skills/* ~/.config/opencode/skills/`
+  - `ln -sfn <ai-kit>/commands-opencode/git ~/.config/opencode/command/git`
+- **dsh 侧**：`commands-dsh/` **不是 opencode 软链扩展**，用 `./scripts/dsh-install.sh`（软链 skills 到 `$DSH_HOME/skills` + `dsh plugin --profile web add link:<本仓库>/commands-dsh`）注册进 dsh profile。
 
 **`skills/` 下只允许放技能的目录**（如 `git-kit/`），禁止放置任何松散说明文件。因为 `ln -sfn skills/*` 会展开全部条目，新增的非目录文件会被一并软链过去。根 `README.md` 即安装说明。
 
@@ -14,11 +15,14 @@
 
 ## 目录结构速览
 
-- `commands-opencode/git/*.md` — 斜杠指令。是**委托壳**，只加载 `git-kit` skill 并按某种意图执行，不含逻辑。
+- `commands-opencode/git/*.md` — opencode 斜杠指令。是**委托壳**，只加载 `git-kit` skill 并按某种意图执行，不含逻辑。
+- `commands-dsh/` — dsh 插件（`lib/index.js`）。**不是 opencode 软链扩展**，经 `scripts/dsh-install.sh` 注册进 dsh profile；同样只声明「命令 → git-kit 分支」意图表，不含逻辑。改动同受下面 git-kit「单一真源」约束。
+- `scripts/dsh-install.sh` — dsh 一键接入（软链 skills + 注册 commands-dsh 插件），幂等。
 - `skills/git-kit/` — Git 工作流（message/commit-push/branch/pr-create/pr-merge/slim/star）。**请求分叉点：多文件结构**。`SKILL.md` 只做「意图路由」+「按需加载」指引；真实逻辑在 `references/`（各分支 .md）与 `scripts/`（.sh 脚本）。
-  - `commands-opencode/git/*` 与 `skills/git-kit` **共享同一实现**，互为两条入口（斜杠 / 自然语言）。改命令类的需求应落到 skill 分支，命令只保留委托壳。
+  - `commands-opencode/git/*`、`commands-dsh/` 与 `skills/git-kit` **共享同一实现**（互为入口：opencode 斜杠 / dsh 斜杠 / 自然语言）。改命令类的需求应落到 skill 分支，命令只保留意图声明。
 - `skills/project-insight/` — 开源项目深度解读。`SKILL.md` 较大（约 50KB），含铁律：真源引用 `文件:行号` 必须经 `scripts/verify-references.mjs` 程序化重定位验证（指纹用**首末行双锚点**，不整段贴码；旧 snippet 格式仅存量兼容），Mermaid 图必须经 `scripts/check-mermaid.mjs` 校验全 `OK`。`[UNVERIFIED]`/`[MERMAID-ERROR]` 一律保留不静默放过。参考性内容按需加载在 `references/`（`data-model-guide.md` 五要素成文细则、`errors-and-fixes.md` 查错表、`analysis-guide.md` 深度方法论、`large-repo-workflow.md` 并行流程、`project-types/` 类型规格）。落盘后**不做 git add/commit**。
-- `skills/svg-maker/`、`skills/tech-design-proposal/` — 单文件 skill。
+- `skills/design-doc/`（原 `tech-design-proposal`）— 技术方案/设计文档生成。多文件：`SKILL.md` 只做意图路由（复杂度 × 类型两轴决策）；模板/类型裁剪/质量红线/收尾在 `references/`（`templates.md`、`types.md`、`quality-bar.md`、`output.md`）。`scripts/check-mermaid.mjs` 为薄壳，复用 project-insight 的 mermaid 校验引擎（单一真源）；成稿含图必须校验，`[MERMAID-ERROR]` 不静默放过。
+- `skills/svg-maker/` — 独立 SVG 图表生成（`SKILL.md` + `references/svg-template.md`）。
 
 ## 运行脚本（project-insight 的 node_modules 不入库）
 

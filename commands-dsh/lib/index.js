@@ -1,119 +1,129 @@
 /**
- * dsh-git-commands —— 把 ai-kit `commands-opencode/git/*` 斜杠指令以 dsh 原生命令方式接入。
+ * dsh-git-commands —— 把 ai-kit 的 git-kit Git 工作流以 dsh 原生命令方式接入。
  *
- * 设计（沿用 ai-kit 的「委托壳」哲学，单一真源在 ai-kit 仓库）：
- * - 每条命令注册到 ctx.commands：出现在 dsh 斜杠菜单、可声明参数 hint、可做确定性校验。
- * - 命令执行时**运行时读取** <ai-kit>/commands-opencode/git/<file>.md 正文，连同用户请求一起经
- *   invocation.agent.followup() 注入当前会话，由 agent 按 git-kit 流程执行（交互步骤照旧）。
- * - 本模块只依赖 Node 内置模块（零 @deepseek-ai/* 运行时 import），
- *   避免第三方插件对内部模块解析位置的脆弱依赖。
+ * 架构（命令 = 意图表，单一真源在 git-kit skill）：
+ * - 逻辑与「意图路由」的唯一真源是 `skills/git-kit`（SKILL.md 意图决策树 +
+ *   references/ + scripts/）。本插件不复制逻辑，只声明「命令 → git-kit 分支」的
+ *   映射表（COMMANDS），是 dsh 斜杠侧的一条薄入口，与 opencode 的
+ *   `commands-opencode/git/*.md`、自然语言触发互为入口。
+ * - 每条命令注册到 ctx.commands（CommandDefinition：name/description/input.hint/
+ *   handler），出现在 dsh 斜杠菜单；handler 校验必填输入后构造一条 user 消息，
+ *   经 invocation.agent.followup() 注入当前会话，让 agent 按 git-kit 对应分支执行。
+ * - 本模块自包含：不读取 ai-kit 仓库内任何文件、无路径耦合、不依赖
+ *   @deepseek-ai/* 运行时 import（消息对象手工构造为官方 createUserMessage 的
+ *   契约形状：role/source/content/id 全齐）。改 git-kit skill 无需重启；
+ *   改本文件（含 COMMANDS 表）需重启 dsh web。
+ *
+ * git-kit 分支 key 词汇表（与 SKILL.md 决策树对齐）：
+ *   commit-push / commit-message / branch / pr-create / pr-merge / tag / slim / star-classify
  */
 
-import { readFileSync, realpathSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { dirname, join, relative } from "node:path";
-import { fileURLToPath } from "node:url";
 
-const name = "dsh-git-commands";
-const inject = ["commands"];
+export const name = "dsh-git-commands";
+export const inject = ["commands"];
 
 /**
- * ai-kit 仓库根目录：默认按本模块真实路径上溯
- * （<root>/commands-dsh/lib/index.js -> <root>），可用 DSH_AIKIT_DIR 覆盖。
+ * 命令意图表。每条 = 一行声明：注册元数据 + git-kit 分支 key。
+ * `branch` 必须与 skills/git-kit/SKILL.md 决策树的分支 key 一致。
  */
-function resolveAiKitRoot() {
-	const override = process.env.DSH_AIKIT_DIR;
-	if (override !== undefined && override.trim().length > 0) return override.trim();
-	return dirname(dirname(dirname(realpathSync(fileURLToPath(import.meta.url)))));
-}
-
-/** 每条命令 = 一个 ai-kit 委托壳文件 + 菜单描述 + 参数形态。 */
 const COMMANDS = [
-	{ name: "git-message", file: "message.md", hint: "<中文描述>", required: true, description: "将中文描述转换为 Conventional Commits 格式的 commit message（纯生成，不提交）" },
-	{ name: "git-commit-push", file: "commit-push.md", description: "基于代码变更生成 commit message 并自动提交推送到远端；稳定分支（main/master/含 release）时自动创建分支" },
-	{ name: "git-branch", file: "branch.md", hint: "<中文描述>", required: true, description: "基于中文描述生成候选分支名，选择后从基准分支创建并切换" },
-	{ name: "git-pr-create", file: "pr-create.md", hint: "[目标分支]", description: "基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab）" },
-	{ name: "git-pr-merge", file: "pr-merge.md", hint: "[PR/MR 编号]", description: "按编号合并 PR/MR（自动识别 gh/glab），删除原分支，切回主干并更新代码" },
-	{ name: "git-tag", file: "tag.md", hint: "[tag名或分支名]", description: "查看最新 tag 与来源分支，选择分支与版本号，构建注记 tag 并推送到远端" },
-	{ name: "git-slim", file: "slim.md", hint: "[保留天数]", description: "将当前 git 仓库瘦身为浅克隆，默认保留最近 30 天历史，保留本地未提交改动" },
-	{ name: "git-star-classify", file: "star-classify.md", description: "拉取并分类你自己的 GitHub star 仓库，输出按大类分组的中文 Markdown 清单" }
+	{
+		name: "git-message",
+		branch: "commit-message",
+		hint: "<中文描述>",
+		required: true,
+		description: "将中文描述转换为 Conventional Commits 格式的 commit message（纯生成，不提交）"
+	},
+	{
+		name: "git-commit-push",
+		branch: "commit-push",
+		description: "基于代码变更生成 commit message 并自动提交推送到远端；稳定分支（main/master/含 release）时自动创建分支"
+	},
+	{
+		name: "git-branch",
+		branch: "branch",
+		hint: "<中文描述>",
+		required: true,
+		description: "基于中文描述生成候选分支名，选择后从基准分支创建并切换"
+	},
+	{
+		name: "git-pr-create",
+		branch: "pr-create",
+		hint: "[目标分支]",
+		description: "基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab）"
+	},
+	{
+		name: "git-pr-merge",
+		branch: "pr-merge",
+		hint: "[PR/MR 编号]",
+		description: "按编号合并 PR/MR（自动识别 gh/glab），删除原分支，切回主干并更新代码"
+	},
+	{
+		name: "git-tag",
+		branch: "tag",
+		hint: "[tag名或分支名]",
+		description: "查看最新 tag 与来源分支，选择分支与版本号，构建注记 tag 并推送到远端"
+	},
+	{
+		name: "git-slim",
+		branch: "slim",
+		hint: "[保留天数]",
+		description: "将当前 git 仓库瘦身为浅克隆，默认保留最近 30 天历史，保留本地未提交改动"
+	},
+	{
+		name: "git-star-classify",
+		branch: "star-classify",
+		description: "拉取并分类你自己的 GitHub star 仓库，输出按大类分组的中文 Markdown 清单"
+	}
 ];
 
-/** 去掉委托壳文件开头的 YAML frontmatter，只留正文。 */
-function stripFrontmatter(raw) {
-	if (!raw.startsWith("---\n")) return raw.trim();
-	const start = raw.indexOf("\n") + 1;
-	let index = start;
-	while (index <= raw.length) {
-		const next = raw.indexOf("\n", index);
-		const end = next < 0 ? raw.length : next;
-		if (raw.slice(index, end).replace(/\r$/, "") === "---") {
-			const bodyStart = next < 0 ? raw.length : next + 1;
-			return raw.slice(bodyStart).trim();
-		}
-		if (next < 0) return raw.trim();
-		index = next + 1;
-	}
-	return raw.trim();
-}
-
-function loadShellBody(aiKitRoot, file) {
-	const shellPath = join(aiKitRoot, "commands-opencode", "git", file);
-	const raw = readFileSync(shellPath, "utf8");
-	return { body: stripFrontmatter(raw), shellPath };
-}
-
-/** 构造一条 user 消息（形态与 @deepseek-ai/dsh-llm createUserMessage 一致，source 必填）。 */
+/** 构造一条 user 消息（形态与官方 createUserMessage 一致，source 必填，全深冻结）。 */
 function userMessage(text) {
 	return Object.freeze({
 		role: "user",
 		// dsh 的 Message 契约要求 source 字段（读 message.source.kind），缺失会在 agent 回合崩溃。
 		source: Object.freeze({ kind: "user" }),
-		content: [Object.freeze({ type: "text", text })],
+		content: Object.freeze([Object.freeze({ type: "text", text })]),
 		id: randomUUID()
 	});
 }
 
-function buildInstruction(def, input, body, shellPath, aiKitRoot) {
+/**
+ * 构造注入当前会话的指令：告知用户请求，并把执行交给 git-kit 的对应分支。
+ * git-kit 分支的完整流程（references/ 与 scripts/）由 agent 加载 skill 后自行读取，
+ * 这里不复制任何逻辑，只做意图指路。
+ */
+function buildInstruction(def, input) {
 	return [
-		`【dsh 命令 /${def.name} 委托】`,
-		`用户请求：${input.length > 0 ? input : "（未附加说明，按委托壳流程处理）"}`,
+		`【dsh 命令 /${def.name}】`,
+		`用户请求：${input.length > 0 ? input : "（未附加说明，按分支流程默认处理）"}`,
 		"",
-		`委托壳 ${relative(aiKitRoot, shellPath)} 原文如下，请按其执行：`,
-		"---",
-		body,
-		"---",
-		"说明：如需用户决策（候选分支名/PR 编号/tag 版本等），先向用户确认再继续；如委托壳要求加载 git-kit，用 skill 工具加载。"
+		`请用 skill 工具加载 git-kit，将本次请求视为 ${def.branch} 分支并按该分支的完整流程执行。`,
+		"如需用户决策（候选分支名 / PR·MR 编号 / tag 版本号 / 保留天数等），先向用户确认再继续。"
 	].join("\n");
 }
 
 function makeHandler(def) {
-	return async (invocation) => {
+	return (invocation) => {
 		const input = invocation.rawInput.trim();
 		if (def.required && input.length === 0) {
 			return { kind: "error", text: `Usage: /${def.name} ${def.hint}\n例如：/${def.name} 修复登录超时` };
 		}
-		const aiKitRoot = resolveAiKitRoot();
-		let shell;
-		try {
-			shell = loadShellBody(aiKitRoot, def.file);
-		} catch (error) {
-			return {
-				kind: "error",
-				text: `无法读取委托壳 ${def.file}（查找于 ${join(aiKitRoot, "commands-opencode", "git")}）：${error instanceof Error ? error.message : String(error)}\n可用 DSH_AIKIT_DIR 指向 ai-kit 仓库根目录。`
-			};
-		}
-		const instruction = buildInstruction(def, input, shell.body, shell.shellPath, aiKitRoot);
+		const instruction = buildInstruction(def, input);
 		try {
 			invocation.agent.followup(userMessage(instruction));
 		} catch (error) {
-			return { kind: "error", text: `已读取委托内容，但无法交给当前会话执行：${error instanceof Error ? error.message : String(error)}` };
+			return {
+				kind: "error",
+				text: `已生成委托指令，但无法交给当前会话执行：${error instanceof Error ? error.message : String(error)}`
+			};
 		}
-		return { kind: "success", text: `已按 ai-kit ${relative(aiKitRoot, shell.shellPath)} 委托 git-kit 执行 /${def.name}，agent 将按流程继续。` };
+		return { kind: "success", text: `已按 git-kit ${def.branch} 分支委托执行 /${def.name}，agent 将按流程继续。` };
 	};
 }
 
-function apply(ctx) {
+export function apply(ctx) {
 	ctx.effect(function* () {
 		for (const def of COMMANDS) {
 			yield ctx.commands.register({
@@ -125,5 +135,3 @@ function apply(ctx) {
 		}
 	}, "dsh-git-commands lifecycle");
 }
-
-export { apply, inject, name };

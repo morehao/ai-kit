@@ -5,4 +5,7 @@ description: 拉取并分类你自己的 GitHub star 仓库，输出按大类分
 # 任务
 本命令由 `git-kit` skill 的 **star-classify 分支**实现。
 
-用 `skill` 工具加载 `git-kit`，将本次请求视为 `star-classify` 意图。
+用 `skill` 工具加载 `git-kit`，将本次请求视为 `star-classify` 意图执行。
+
+# 参数
+本命令无参数。
