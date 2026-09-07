@@ -1,7 +1,8 @@
 # 自动发布 workflow：
 #  - branch main 有新提交时，用 changesets 生成/更新「Version Packages」PR；
 #  - merge 该 PR 后，changesets 把 @morehao/dsh-commands 增量版本发布到 npmjs。
-# 需要仓库 Secrets：NPM_TOKEN（npmjs 的 token，发布 scoped public 包）。
+# 需要仓库 Secrets：NPM_TOKEN（npmjs 的 granular access token，发布 scoped public 包；
+#   因为账号开启「发布需 2FA」，该 token 必须勾选「bypass 2FA」，否则 npm 报 E403）。
 # 说明：changesets 按 .changeset/*.md 决定版本升级，改动 commands-dsh 时执行
 #   pnpm changeset   （会在 .changeset/ 生成一行 patch/minor/major 描述）
 # 只有真正改动 commands-dsh 的提交才会触发发版，仓库其他内容（skills/ scripts/）不受影响。
