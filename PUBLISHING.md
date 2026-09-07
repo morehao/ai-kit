@@ -2,6 +2,42 @@
 
 > 本文记录把 `commands-dsh/` 发布到 npm 的**完整流程**与**踩坑清单**。核心原则同样适用于其他 npm 包：**打 tag + OIDC 免长效 token**。文末「操作手册」是日常发新版的速查。
 
+## 0. 首次建包前自检清单
+
+> 第一次把某个包推到 npm 之前，逐项勾选；有一项没满足就先用第 3 节补上，别急着发版。
+
+**账号与命名**
+- [ ] npm 账号可用，`npm whoami` 能返回你的用户名。
+- [ ] 用到的 scope 已存在（如 `@morehao`）。核对：`curl -s https://registry.npmjs.org/-/org/<scope>/package` 返回 200（否则 404/报错，说明 scope 未建或包名已被占用）。
+- [ ] 包名已定且未占用；`npx npm-check` 或 `npm view <pkg-name>` 确认当前不存在 / 未被他人占。
+
+**发布权限与 2FA**
+- [ ] 确认账号是否「发布需 2FA」：是，则非交互发布（`setup-npm-trusted-publish` 等）需要**带 bypass-2FA 的 granular token**；且 classic `npm_` token 无法绕过 2FA。
+- [ ] 准备好一次性 granular token（scope 读写 + bypass 2FA，7 天即可），或接受交互式 login（但不能驱动非交互发布）。
+
+**registry 与本地环境**
+- [ ] 全局 `~/.npmrc` 的 `registry` 是否指向 npmmirror？是则**所有发包命令一律加 `--registry https://registry.npmjs.org`**，避免被劫持到 npmmirror / 弹 CNPM 注册页。
+- [ ] CI 里 Node ≥ 22.13（若用 pnpm 11，`node:sqlite` 需要）；OIDC 发布需 **npm CLI ≥ 11.5.1**（CI 里 `npm i -g npm@latest`）。
+
+**npm 侧一次性设置（第 3 节）**
+- [ ] 包在 npm 上已「存在」（用 `setup-npm-trusted-publish` 发过 `0.0.0` 占位包）；否则 Trusted Publisher 配不了。
+- [ ] Trusted Publisher 已配置：Provider=GitHub Actions、Owner、Repository、**Workflow=文件名(含 `.yml`)**、Environment 留空。
+- [ ] **Allowed actions 允许 `npm publish` 直接发布**（默认只允许 `npm stage publish`，会导致 `permission denied`）。
+- [ ] workflow 的 `name:` **等于文件名**（如 `release.yml`），使 OIDC `workflow` claim 与 npm 侧匹配。
+
+**仓库 / workflow 前置**
+- [ ] 仓库存在且为 GitHub（GitHub-hosted runner），workflow 文件在 `.github/workflows/<文件名>.yml`。
+- [ ] 发布 job 有 `permissions: id-token: write`，且发布命令里**没有** `NODE_AUTH_TOKEN`（会覆盖 OIDC）。
+- [ ] `scripts/` 里的发布脚本可执行、`bash -n` 通过；发布用**单一命令**（如 `bash ./scripts/ci-publish.sh`）。
+
+**本仓库特有的命名约定（改包名时）**
+- [ ] `package.json` 的 `name` == `cordis.patch.yml` 的 `insert[0].name`（模块标识符）。
+- [ ] `lib/index.js` 的 `export const name` == `cordis.patch.yml` 的 `insert[0].id`。
+- [ ] `package.json` 有 `publishConfig.access: public`、`repository.directory` 指向包目录。
+
+**收尾清理**
+- [ ] 建包用的临时 bypass-2FA token 已撤销；GitHub `NPM_TOKEN` secret 已删除（发布走 OIDC 不再需要）。
+
 ## 1. 总览
 
 - **发布包**：`@morehao/dsh-commands`（源码目录 `commands-dsh/`，二者**刻意不同名**）。
