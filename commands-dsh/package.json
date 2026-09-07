@@ -1,7 +1,7 @@
 {
-  "name": "dsh-git-commands",
+  "name": "@morehao/dsh-commands",
   "version": "0.1.0",
-  "private": true,
+  "description": "把 ai-kit 的 git-kit Git 工作流以 dsh 原生斜杠命令接入（薄意图表，委托 git-kit skill 执行）",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -13,6 +13,26 @@
     "cordis.patch.yml"
   ],
   "license": "MIT",
+  "author": "morehao <morehao@qq.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morehao/ai-kit.git",
+    "directory": "commands-dsh"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-command",
+    "git",
+    "git-kit",
+    "conventional-commits"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

@@ -1,0 +1,51 @@
+# 自动发布 workflow：
+#  - branch main 有新提交时，用 changesets 生成/更新「Version Packages」PR；
+#  - merge 该 PR 后，changesets 把 @morehao/dsh-commands 增量版本发布到 npmjs。
+# 需要仓库 Secrets：NPM_TOKEN（npmjs 的 token，发布 scoped public 包）。
+# 说明：changesets 按 .changeset/*.md 决定版本升级，改动 commands-dsh 时执行
+#   pnpm changeset   （会在 .changeset/ 生成一行 patch/minor/major 描述）
+# 只有真正改动 commands-dsh 的提交才会触发发版，仓库其他内容（skills/ scripts/）不受影响。
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create Release Pull Request or Publish to npm
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+          publish: pnpm changeset publish
+          commit: "chore: version packages"
+          title: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

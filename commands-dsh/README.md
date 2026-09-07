@@ -1,6 +1,6 @@
-# dsh-git-commands
+# dsh-commands
 
-把 ai-kit 的 git-kit Git 工作流以 **dsh 原生斜杠命令**接入 dsh（与 opencode 入口、自然语言入口共用 git-kit 同一实现，单一真源）。
+一个可扩展的 **dsh 原生斜杠命令集合包**（npm 名 `@morehao/dsh-commands`，仓库目录仍为 `commands-dsh/`）。当前内置 git-kit 的 Git 工作流命令（与 opencode 入口、自然语言入口共用 git-kit 同一实现，单一真源）；将来其它 skill 的命令只需往 `lib/index.js` 的 `COMMANDS` 表加条目即可。
 
 ## 提供的命令
 
@@ -24,7 +24,19 @@
 - 编辑 `skills/git-kit/` 的内容**无需重启**，下次执行即生效。
 - 修改本插件的 `lib/index.js`（含 `COMMANDS` 表）需重启 dsh web 生效。
 
-## 安装（见仓库根 README「dsh 接入」）
+## 安装
+
+本插件已发布到 npm（`@morehao/dsh-commands`），可通过 dsh 一条命令安装：
+
+```bash
+# 从 npm 安装已发布版本（git-kit skill 仍需由 ai-kit 提供，见下方说明）
+dsh plugin --profile web add @morehao/dsh-commands
+# 重启 dsh web
+```
+
+> **skill 依赖**：插件只声明「命令 → git-kit 分支」意图表，真正的执行授权给 `git-kit` skill。而 dsh 不从 node_modules 扫描 skill，所以仍需把 `skills/git-kit/` 放入 `$DSH_HOME/skills`（默认 `~/.dsh/skills`）。完整一键接入见仓库根 `./scripts/dsh-install.sh`，它同时软链 `skills/*` 并以 `link:`（开发模式，源码改动即生效）方式接入本插件。
+
+本地开发 / 测试用 `link:` 方式（源码即时生效）：
 
 ```bash
 ./scripts/dsh-install.sh
@@ -35,3 +47,15 @@
 
 - 增删命令：改 `lib/index.js` 的 `COMMANDS` 表即可（每条一行声明）；`branch` 值必须与 git-kit `SKILL.md` 决策树的分支 key 一致。
 - 命令与 opencode 侧 `commands-opencode/git/*.md` 是同一 git-kit 的两条入口，只声明意图、不重复逻辑。
+
+## 发布（自动）
+
+用 **changesets** 做自动版本管理与发布（见仓库根 `.github/workflows/release.yml` + `.changeset/config.json`）：
+
+- 每次改动 `lib/index.js` 或 `cordis.patch.yml` 后，在改动所在 PR 里执行
+  ```bash
+  pnpm changeset
+  ```
+  按提示选择 `patch`/`minor`/`major`，会在 `.changeset/` 生成一行版本描述。
+- merge 到 `main` 后，release workflow 自动开「Version Packages」PR；合并它即把新版本发布到 npmjs。
+- **关键约定**：`package.json` 的 `name`（npm 包名）与 `cordis.patch.yml` 的 `insert[0].name`（dsh 启动时 `import()` 的**模块标识符**）必须一致；`lib/index.js` 的 `export const name`（cordis 插件名）与 `cordis.patch.yml` 的 `insert[0].id` 保持一致即可，但与模块标识符解耦。改包名时请三者同步核对。

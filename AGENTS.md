@@ -11,12 +11,14 @@
 
 **`skills/` 下只允许放技能的目录**（如 `git-kit/`），禁止放置任何松散说明文件。因为 `ln -sfn skills/*` 会展开全部条目，新增的非目录文件会被一并软链过去。根 `README.md` 即安装说明。
 
-`.gitignore` 忽略了 `.opencode/`、`.superpowers/`、`docs/superpowers/`（本地草稿，不入库）。
+`.gitignore` 忽略了 `.opencode/`、`.superpowers/`、`docs/superpowers/`（本地草稿，不入库）。另忽略 `node_modules/`。
+
+**发布工具链**：仓库根是一个**最小的 pnpm workspace**（`package.json` 仅 `private: true` + `workspaces: ["commands-dsh"]`，`pnpm-workspace.yaml` 只列 `commands-dsh`），仅为 `.changeset/`（版本管理）与 `.github/workflows/release.yml`（自动发布）服务。根目录的 `package.json` / `pnpm-workspace.yaml` / `pnpm-lock.yaml` / `.changeset/` **不是 skills 或命令运行的前提**，不依赖它们也能用 skills 与 opencode/dsh 命令；它们是「把 commands-dsh 发布到 npm」的专用机制。**唯一发布子包是 `commands-dsh/`**；skills 与 opencode 侧不入包。
 
 ## 目录结构速览
 
 - `commands-opencode/git/*.md` — opencode 斜杠指令。是**委托壳**，只加载 `git-kit` skill 并按某种意图执行，不含逻辑。
-- `commands-dsh/` — dsh 插件（`lib/index.js`）。**不是 opencode 软链扩展**，经 `scripts/dsh-install.sh` 注册进 dsh profile；同样只声明「命令 → git-kit 分支」意图表，不含逻辑。改动同受下面 git-kit「单一真源」约束。
+- `commands-dsh/` — dsh 插件（`lib/index.js`）。**不是 opencode 软链扩展**，经 `scripts/dsh-install.sh` 注册进 dsh profile；同样只声明「命令 → git-kit 分支」意图表，不含逻辑。改动同受下面 git-kit「单一真源」约束。**也是一个可扩展的 npm 子包**（`@morehao/dsh-commands`，cordis 插件名 `dsh-commands`）：`package.json` 的 `name` 必须与 `cordis.patch.yml` 的 `insert[0].name`（dsh 用于 `import()` 的模块标识符）一致；`lib/index.js` 的 `export const name`（cordis 插件名）与 `insert[0].id` 对齐、与模块标识符解耦。改包名时三者同步核对。仓库目录名 `commands-dsh/` 与 npm 包名刻意不同（前者与 `commands-opencode/` 平行，后者是发布名），由 `repository.directory` 关联。
 - `scripts/dsh-install.sh` — dsh 一键接入（软链 skills + 注册 commands-dsh 插件），幂等。
 - `skills/git-kit/` — Git 工作流（message/commit-push/branch/pr-create/pr-merge/slim/star）。**请求分叉点：多文件结构**。`SKILL.md` 只做「意图路由」+「按需加载」指引；真实逻辑在 `references/`（各分支 .md）与 `scripts/`（.sh 脚本）。
   - `commands-opencode/git/*`、`commands-dsh/` 与 `skills/git-kit` **共享同一实现**（互为入口：opencode 斜杠 / dsh 斜杠 / 自然语言）。改命令类的需求应落到 skill 分支，命令只保留意图声明。

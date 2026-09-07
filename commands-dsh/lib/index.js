@@ -1,5 +1,5 @@
 /**
- * dsh-git-commands —— 把 ai-kit 的 git-kit Git 工作流以 dsh 原生命令方式接入。
+ * dsh-commands —— 把 ai-kit 的 git-kit Git 工作流以 dsh 原生命令方式接入（可扩展其他命令）。
  *
  * 架构（命令 = 意图表，单一真源在 git-kit skill）：
  * - 逻辑与「意图路由」的唯一真源是 `skills/git-kit`（SKILL.md 意图决策树 +
@@ -20,7 +20,7 @@
 
 import { randomUUID } from "node:crypto";
 
-export const name = "dsh-git-commands";
+export const name = "dsh-commands";
 export const inject = ["commands"];
 
 /**
@@ -133,5 +133,5 @@ export function apply(ctx) {
 				handler: makeHandler(def)
 			});
 		}
-	}, "dsh-git-commands lifecycle");
+	}, "dsh-commands lifecycle");
 }
