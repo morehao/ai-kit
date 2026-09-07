@@ -50,6 +50,16 @@ jobs:
       - name: Upgrade npm for trusted publishing
         run: npm install -g npm@latest
 
+      - name: Debug OIDC claims
+        run: |
+          token=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm")
+          OIDC_TOKEN="$token" node -e '
+            const j = JSON.parse(Buffer.from(process.env.OIDC_TOKEN.split(".")[1], "base64url").toString("utf8"));
+            for (const k of ["workflow","workflow_ref","repository","repository_owner","ref","environment","job_workflow_ref"]) {
+              console.log(k + " = " + (j[k] || "(none)"));
+            }
+          '
+
       - name: Create Release Pull Request or Publish to npm
         uses: changesets/action@v1
         with:
