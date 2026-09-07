@@ -7,13 +7,13 @@
 - **opencode 侧**：通过**软链接**注册到 `~/.config/opencode/`，本仓是唯一真源：
   - `ln -sfn <ai-kit>/skills/* ~/.config/opencode/skills/`
   - `ln -sfn <ai-kit>/commands-opencode/git ~/.config/opencode/command/git`
-- **dsh 侧**：`commands-dsh/` **不是 opencode 软链扩展**，用 `./scripts/dsh-install.sh`（软链 skills 到 `$DSH_HOME/skills` + `dsh plugin --profile web add link:<本仓库>/commands-dsh`）注册进 dsh profile。
+- **dsh 侧**：`commands-dsh/` **不是 opencode 软链扩展**，用 `./scripts/dsh-install.sh`（软链 skills 到 `$DSH_HOME/skills` + 插件注册）接入。插件注册可选两种：`link:<本仓库>/commands-dsh`（**开发**，改源码即生效）或 `dsh plugin --profile web add @morehao/dsh-commands`（**安装已发布 npm 包**）。无论哪种，`git-kit` skill 仍由本仓库软链提供。
 
 **`skills/` 下只允许放技能的目录**（如 `git-kit/`），禁止放置任何松散说明文件。因为 `ln -sfn skills/*` 会展开全部条目，新增的非目录文件会被一并软链过去。根 `README.md` 即安装说明。
 
 `.gitignore` 忽略了 `.opencode/`、`.superpowers/`、`docs/superpowers/`（本地草稿，不入库）。另忽略 `node_modules/`。
 
-**发布工具链**：仓库根是一个**最小的 pnpm workspace**（`package.json` 仅 `private: true` + `workspaces: ["commands-dsh"]`，`pnpm-workspace.yaml` 只列 `commands-dsh`），仅为 `.changeset/`（版本管理）与 `.github/workflows/release.yml`（自动发布）服务。根目录的 `package.json` / `pnpm-workspace.yaml` / `pnpm-lock.yaml` / `.changeset/` **不是 skills 或命令运行的前提**，不依赖它们也能用 skills 与 opencode/dsh 命令；它们是「把 commands-dsh 发布到 npm」的专用机制。**唯一发布子包是 `commands-dsh/`**；skills 与 opencode 侧不入包。
+**发布工具链**：仓库根是一个**最小的 pnpm workspace**（`package.json` 仅 `private: true` + `workspaces: ["commands-dsh"]`，`pnpm-workspace.yaml` 只列 `commands-dsh`），仅为 `.github/workflows/release.yml`（**tag 触发**）服务。发布方式是**打 `vX.Y.Z` tag → OIDC（Trusted Publishing）自动发布 `@morehao/dsh-commands`**（`npm publish --provenance`，无长效 token）；tag 版本须与 `commands-dsh/package.json` 的 `version` 一致（不一致拒绝发布）。**不再使用 changesets**。根目录的 `package.json` / `pnpm-workspace.yaml` / `pnpm-lock.yaml` **不是 skills 或命令运行的前提**；它们是「把 commands-dsh 发布到 npm」的专用机制。**唯一发布子包是 `commands-dsh/`**；skills 与 opencode 侧不入包。
 
 ## 目录结构速览
 

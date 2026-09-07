@@ -1,37 +1,31 @@
-# 自动发布 workflow（Trusted Publishing / OIDC）：
-#  - branch main 有新提交时，用 changesets 生成/更新「Version Packages」PR；
-#  - merge 该 PR 后，用 npm Trusted Publishing（OIDC）把 @morehao/dsh-commands 发布到 npmjs。
+# 自动发布 workflow（Trusted Publishing / OIDC，**tag 触发**）：
+#   推送 vX.Y.Z 标签时，从 tag 读取版本，经 OIDC 把 @morehao/dsh-commands 发布到 npmjs。
 # 认证：OIDC，**不需要 NPM_TOKEN**（job 提 id-token: write，npm CLI 自动换取短时令牌）。
-#   （一次性、需要在 npm 侧完成的前置条件）
-#     1) npm 上包需已存在 —— 用 `npx setup-npm-trusted-publish @morehao/dsh-commands`
-#        发布占位包（默认 0.0.0）以把包「建出来」；
+#
+#   npm 侧一次性前置（建包时已完成）：
+#     1) 包需已存在 —— 用 `npx setup-npm-trusted-publish @morehao/dsh-commands` 发占位包建出来；
 #     2) 到 https://www.npmjs.com/package/@morehao/dsh-commands/access 配置 Trusted Publisher：
-#        - 提供者选 GitHub Actions；Owner=morehao；Repository=ai-kit；
-#        - Workflow=release.yml（含扩展名的文件名；**且 workflow 的 `name:` 也必须等于 release.yml**，
-#          这样 GitHub OIDC 的 workflow claim 才是 release.yml，与 npm 侧精确匹配）；
+#        - 提供者 GitHub Actions；Owner=morehao；Repository=ai-kit；
+#        - Workflow=release.yml（**且本 workflow 的 name: 也必须等于 release.yml**，这样 OIDC 的
+#          workflow claim 才是 release.yml，才与 npm 侧精确匹配）；
 #        - **Allowed actions 必须允许 `npm publish`（直接发布）**——2026-09-03 后新建的 Trusted Publisher
 #          默认只允许 `npm stage publish`，会导致 OIDC 直接发布被拒为「permission denied」。
-# 说明：changesets 按 .changeset/*.md 决定版本升级，只有真正改动 commands-dsh 的提交才会发版。
-# 注意：packageManager 固定 pnpm@11.21.0（根 package.json），pnpm 11 需 Node >= 22.13；
-#   Trusted Publishing 需 npm CLI >= 11.5.1，故用 `npm i -g npm@latest` 升级 npm；
-#   根 package.json 为 private，发布必须从 commands-dsh 目录用 npm publish（脚本已处理）。
-#   关键：name 必须等于文件名 release.yml —— GitHub OIDC 的 workflow claim 会取 name 值，
-#   只有设为 release.yml，claim 才与 npm Trusted Publisher 的「Workflow=文件名」精确匹配。
+#
+# 版本约定：发布版本 = 去掉 tag 前缀 v（v1.2.3 -> 1.2.3），且必须与 commands-dsh/package.json.version 一致
+#   （脚本会校验，不一致拒绝发布）。npm 上同版本已存在则跳过（幂等）。
 name: release.yml
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  release:
-    name: Release
+  publish:
+    name: Publish
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
       id-token: write   # 必须：OIDC 可信发布
     steps:
       - name: Checkout
@@ -45,24 +39,10 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Upgrade npm for trusted publishing
         run: npm install -g npm@latest
 
-      - name: Create Release Pull Request or Publish to npm
-        uses: changesets/action@v1
-        with:
-          version: pnpm changeset version
-          # action 用 @actions/exec 执行 publish（单一命令、不做 shell 解析），
-          # 所以一律用 `bash <脚本>` 单命令，逻辑（含「已在 npm 则跳过」守卫）放脚本里。
-          # 发布走 OIDC，不再传 NODE_AUTH_TOKEN（留了会覆盖 OIDC 导致 E403）。
-          publish: bash ./scripts/ci-publish.sh
-          commit: "chore: version packages"
-          title: "chore: version packages"
+      - name: Publish to npm via OIDC
+        run: bash ./scripts/ci-publish.sh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}

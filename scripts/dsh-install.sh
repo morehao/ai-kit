@@ -4,9 +4,7 @@
 #   2) 把 commands-dsh 插件注册进 dsh profile（默认 web）
 #
 # 本脚本是「开发/本地接入」方式（link: 真软链，源码改动即生效）。
-# 若只想从 npm 安装已发布版本，可改用：
-#   dsh plugin --profile web add @morehao/dsh-commands
-#   但 git-kit skill 仍需本仓库提供（下面的 skills 软链步骤，或另装 skill 包）。
+# 想从 npm 装已发布版本：DSH_USE_NPM=1 ./scripts/dsh-install.sh（仍会软链 skills，git-kit skill 由此提供）。
 #
 # 卸载：dsh plugin --profile web remove @morehao/dsh-commands（bundles 会自动摘除），并删除对应软链。
 # 注意：插件名现在是 scoped 的 @morehao/dsh-commands；若你旧版以 dsh-git-commands 或
@@ -71,7 +69,13 @@ for old_name in "dsh-git-commands" "@morehao/dsh-git-commands"; do
   fi
 done
 
-dsh plugin --profile "$DSH_PROFILE" add "link:${REPO_ROOT}/commands-dsh"
+if [ "${DSH_USE_NPM:-0}" = "1" ]; then
+  echo "==> 安装已发布 npm 包 @morehao/dsh-commands（git-kit skill 仍由本仓库软链提供）"
+  dsh plugin --profile "$DSH_PROFILE" add "@morehao/dsh-commands"
+else
+  echo "==> 安装开发 link: ${REPO_ROOT}/commands-dsh"
+  dsh plugin --profile "$DSH_PROFILE" add "link:${REPO_ROOT}/commands-dsh"
+fi
 
 cat <<'DONE'
 
