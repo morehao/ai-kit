@@ -50,12 +50,12 @@ dsh plugin --profile web add @morehao/dsh-commands
 
 ## 发布（自动）
 
-用 **changesets** 做自动版本管理与发布（见仓库根 `.github/workflows/release.yml` + `.changeset/config.json`）：
+用**打 tag** 自动发布到 npm（OIDC / Trusted Publishing，无需长效 token；见仓库根 `.github/workflows/release.yml`）：
 
-- 每次改动 `lib/index.js` 或 `cordis.patch.yml` 后，在改动所在 PR 里执行
+- 发布方式：升好版本后打 tag 并推送，workflow 用 OIDC 把该版本发布到 npmjs：
   ```bash
-  pnpm changeset
+  # 1) 升版本：改 commands-dsh/package.json 的 version（如 0.1.0 -> 0.2.0），提交并 push 到 main
+  # 2) 打与版本一致的 tag（去掉 v 前缀）：git tag v0.2.0 && git push origin v0.2.0
   ```
-  按提示选择 `patch`/`minor`/`major`，会在 `.changeset/` 生成一行版本描述。
-- merge 到 `main` 后，release workflow 自动开「Version Packages」PR；合并它即把新版本发布到 npmjs。
+  workflow 会校验 `tag 版本 == package.json version`（不一致拒绝发布）；同版本在 npm 已存在则跳过（幂等）。
 - **关键约定**：`package.json` 的 `name`（npm 包名）与 `cordis.patch.yml` 的 `insert[0].name`（dsh 启动时 `import()` 的**模块标识符**）必须一致；`lib/index.js` 的 `export const name`（cordis 插件名）与 `cordis.patch.yml` 的 `insert[0].id` 保持一致即可，但与模块标识符解耦。改包名时请三者同步核对。
