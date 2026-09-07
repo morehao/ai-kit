@@ -45,7 +45,9 @@ jobs:
         uses: changesets/action@v1
         with:
           version: pnpm changeset version
-          publish: pnpm changeset publish
+          # 直接发布并暴露底层 npm 错误（changesets publish 会把 E403 吞成 TypeError，
+          # 不利于诊断）。后续确认正常后可改回 `pnpm changeset publish`。
+          publish: npm whoami && pnpm --filter @morehao/dsh-commands publish --access public
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
