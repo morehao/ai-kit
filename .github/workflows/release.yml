@@ -12,8 +12,8 @@
 # 注意：packageManager 固定 pnpm@11.21.0（根 package.json），pnpm 11 需 Node >= 22.13；
 #   Trusted Publishing 需 npm CLI >= 11.5.1，故用 `npm i -g npm@latest` 升级 npm；
 #   根 package.json 为 private，发布必须从 commands-dsh 目录用 npm publish（脚本已处理）。
-name: Release
-
+#   注意：这里不设置 name（否则 GitHub OIDC 的 workflow claim 会是 name 值），
+#   让 claim 等于文件名 release.yml，与 npm Trusted Publisher 要求的「文件名」对齐。
 on:
   push:
     branches:
