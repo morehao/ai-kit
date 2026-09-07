@@ -7,7 +7,10 @@
 #        发布占位包（默认 0.0.0）以把包「建出来」；
 #     2) 到 https://www.npmjs.com/package/@morehao/dsh-commands/access 配置 Trusted Publisher：
 #        - 提供者选 GitHub Actions；Owner=morehao；Repository=ai-kit；
-#        - Workflow=release.yml（**文件名**，含扩展名）；并把发布 MFA 设为 automation/publish。
+#        - Workflow=release.yml（含扩展名的文件名；**且 workflow 的 `name:` 也必须等于 release.yml**，
+#          这样 GitHub OIDC 的 workflow claim 才是 release.yml，与 npm 侧精确匹配）；
+#        - **Allowed actions 必须允许 `npm publish`（直接发布）**——2026-09-03 后新建的 Trusted Publisher
+#          默认只允许 `npm stage publish`，会导致 OIDC 直接发布被拒为「permission denied」。
 # 说明：changesets 按 .changeset/*.md 决定版本升级，只有真正改动 commands-dsh 的提交才会发版。
 # 注意：packageManager 固定 pnpm@11.21.0（根 package.json），pnpm 11 需 Node >= 22.13；
 #   Trusted Publishing 需 npm CLI >= 11.5.1，故用 `npm i -g npm@latest` 升级 npm；
@@ -50,16 +53,6 @@ jobs:
 
       - name: Upgrade npm for trusted publishing
         run: npm install -g npm@latest
-
-      - name: Debug OIDC claims
-        run: |
-          token=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm")
-          OIDC_TOKEN="$token" node -e '
-            const j = JSON.parse(Buffer.from(process.env.OIDC_TOKEN.split(".")[1], "base64url").toString("utf8"));
-            for (const k of ["workflow","workflow_ref","repository","repository_owner","ref","environment","job_workflow_ref"]) {
-              console.log(k + " = " + (j[k] || "(none)"));
-            }
-          '
 
       - name: Create Release Pull Request or Publish to npm
         uses: changesets/action@v1
