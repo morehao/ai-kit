@@ -5,6 +5,8 @@
 # 说明：changesets 按 .changeset/*.md 决定版本升级，改动 commands-dsh 时执行
 #   pnpm changeset   （会在 .changeset/ 生成一行 patch/minor/major 描述）
 # 只有真正改动 commands-dsh 的提交才会触发发版，仓库其他内容（skills/ scripts/）不受影响。
+# 注意：packageManager 固定 pnpm@11.21.0（见根 package.json），pnpm 11 需要 Node >= 22.13，
+#   故 Setup Node 用 22（否则 Node 20 缺 node:sqlite，pnpm install 会报 ERR_UNKNOWN_BUILTIN_MODULE）。
 name: Release
 
 on:
@@ -30,7 +32,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           registry-url: https://registry.npmjs.org
 
       - name: Setup pnpm
