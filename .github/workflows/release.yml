@@ -45,9 +45,9 @@ jobs:
         uses: changesets/action@v1
         with:
           version: pnpm changeset version
-          # 从包目录直接 pnpm publish，确保真正发布 commands-dsh 并暴露底层 npm 错误
-          # （此前 --filter 在私有根 workspace 上静默跳过，未真正发布）。
-          publish: npm whoami && pnpm --dir commands-dsh publish --access public
+          # 用 npm publish 在包目录真实发布（pnpm 的 workspace publish 会把私有根包当目标而静默跳过）。
+          # npm publish 会打印明确错误，方便定位 E403 的真实原因。
+          publish: npm whoami && npm publish ./commands-dsh --access public
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
