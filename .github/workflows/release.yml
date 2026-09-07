@@ -1,13 +1,17 @@
-# 自动发布 workflow：
+# 自动发布 workflow（Trusted Publishing / OIDC）：
 #  - branch main 有新提交时，用 changesets 生成/更新「Version Packages」PR；
-#  - merge 该 PR 后，changesets 把 @morehao/dsh-commands 增量版本发布到 npmjs。
-# 需要仓库 Secrets：NPM_TOKEN（npmjs 的 granular access token，发布 scoped public 包；
-#   因为账号开启「发布需 2FA」，该 token 必须勾选「bypass 2FA」，否则 npm 报 E403）。
-# 说明：changesets 按 .changeset/*.md 决定版本升级，改动 commands-dsh 时执行
-#   pnpm changeset   （会在 .changeset/ 生成一行 patch/minor/major 描述）
-# 只有真正改动 commands-dsh 的提交才会触发发版，仓库其他内容（skills/ scripts/）不受影响。
-# 注意：packageManager 固定 pnpm@11.21.0（见根 package.json），pnpm 11 需要 Node >= 22.13，
-#   故 Setup Node 用 22（否则 Node 20 缺 node:sqlite，pnpm install 会报 ERR_UNKNOWN_BUILTIN_MODULE）。
+#  - merge 该 PR 后，用 npm Trusted Publishing（OIDC）把 @morehao/dsh-commands 发布到 npmjs。
+# 认证：OIDC，**不需要 NPM_TOKEN**（job 提 id-token: write，npm CLI 自动换取短时令牌）。
+#   （一次性、需要在 npm 侧完成的前置条件）
+#     1) npm 上包需已存在 —— 用 `npx setup-npm-trusted-publish @morehao/dsh-commands`
+#        发布占位包（默认 0.0.0）以把包「建出来」；
+#     2) 到 https://www.npmjs.com/package/@morehao/dsh-commands/access 配置 Trusted Publisher：
+#        - 提供者选 GitHub Actions；Owner=morehao；Repository=ai-kit；
+#        - Workflow=release.yml（**文件名**，含扩展名）；并把发布 MFA 设为 automation/publish。
+# 说明：changesets 按 .changeset/*.md 决定版本升级，只有真正改动 commands-dsh 的提交才会发版。
+# 注意：packageManager 固定 pnpm@11.21.0（根 package.json），pnpm 11 需 Node >= 22.13；
+#   Trusted Publishing 需 npm CLI >= 11.5.1，故用 `npm i -g npm@latest` 升级 npm；
+#   根 package.json 为 private，发布必须从 commands-dsh 目录用 npm publish（脚本已处理）。
 name: Release
 
 on:
@@ -24,6 +28,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write   # 必须：OIDC 可信发布
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,15 +47,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+
       - name: Create Release Pull Request or Publish to npm
         uses: changesets/action@v1
         with:
           version: pnpm changeset version
           # action 用 @actions/exec 执行 publish（单一命令、不做 shell 解析），
           # 所以一律用 `bash <脚本>` 单命令，逻辑（含「已在 npm 则跳过」守卫）放脚本里。
+          # 发布走 OIDC，不再传 NODE_AUTH_TOKEN（留了会覆盖 OIDC 导致 E403）。
           publish: bash ./scripts/ci-publish.sh
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

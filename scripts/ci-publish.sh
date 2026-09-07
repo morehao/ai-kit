@@ -19,4 +19,5 @@ if [ -n "$published" ]; then
 fi
 
 echo "Publishing ${name}@${v}"
-npm publish --access public --registry https://registry.npmjs.org
+# OIDC 可信发布：job 提 id-token: write，npm CLI(>=11.5.1) 自动换取短时令牌，无需 NODE_AUTH_TOKEN。
+npm publish --provenance --access public --registry https://registry.npmjs.org
