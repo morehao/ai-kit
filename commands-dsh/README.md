@@ -50,7 +50,7 @@ dsh plugin --profile web add @morehao/dsh-commands
 
 ## 发布（自动）
 
-用**打 tag** 自动发布到 npm（OIDC / Trusted Publishing，无需长效 token；见仓库根 `.github/workflows/release.yml`）：
+用**打 tag** 自动发布到 npm（OIDC / Trusted Publishing，无需长效 token；见仓库根 `.github/workflows/release.yml`；完整流程与踩坑见 [`PUBLISHING.md`](../PUBLISHING.md)）：
 
 - 发布方式：升好版本后打 tag 并推送，workflow 用 OIDC 把该版本发布到 npmjs：
   ```bash

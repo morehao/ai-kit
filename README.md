@@ -8,6 +8,7 @@
 ai-kit/
 ├── README.md                  # 本说明
 ├── LICENSE
+├── PUBLISHING.md              # npm 发包流程与踩坑说明（@morehao/dsh-commands / OIDC）
 ├── commands-opencode/          # opencode 斜杠指令
 │   ├── README.md              # 指令功能与用法说明
 │   └── git/                   # Git 相关指令
@@ -83,7 +84,7 @@ ai-kit/
 
 脚本做两件事：① 软链 `skills/*` 到 `$DSH_HOME/skills`（默认 `~/.dsh/skills`）；② `dsh plugin --profile web add link:<本仓库>/commands-dsh`（`link:` 为真软链，源码改动即生效；自动追加进 profile 的 bundles）。
 
-> 插件已发布到 npm（`@morehao/dsh-commands`），也可只装命令插件本体：`dsh plugin --profile web add @morehao/dsh-commands`。注意 git-kit skill 仍需来自本仓库（dsh 不从 node_modules 扫描 skill），所以用 npm 方式时请另行软链 `skills/*` 或执行本脚本的 skills 步骤。
+> 插件已发布到 npm（`@morehao/dsh-commands`），也可只装命令插件本体：`dsh plugin --profile web add @morehao/dsh-commands`。注意 git-kit skill 仍需来自本仓库（dsh 不从 node_modules 扫描 skill），所以用 npm 方式时请另行软链 `skills/*` 或执行本脚本的 skills 步骤。发包/更新到 npm 的完整流程见 [PUBLISHING.md](PUBLISHING.md)。
 
 卸载：`dsh plugin --profile web remove @morehao/dsh-commands`，再删除对应的 skill 软链即可。（旧版曾以 `dsh-git-commands` 或 `@morehao/dsh-git-commands` 安装过：对应 `dsh plugin --profile web remove dsh-git-commands` / `dsh plugin --profile web remove @morehao/dsh-git-commands`。）
 
