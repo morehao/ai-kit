@@ -45,9 +45,9 @@ jobs:
         uses: changesets/action@v1
         with:
           version: pnpm changeset version
-          # 用 npm publish 在包目录真实发布（pnpm 的 workspace publish 会把私有根包当目标而静默跳过）。
-          # npm publish 会打印明确错误，方便定位 E403 的真实原因。
-          publish: npm whoami && npm publish ./commands-dsh --access public
+          # action 用 @actions/exec 执行 publish（单一命令、不做 shell 解析），
+          # 所以一律用 `bash <脚本>` 单命令，逻辑（含「已在 npm 则跳过」守卫）放脚本里。
+          publish: bash ./scripts/ci-publish.sh
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
