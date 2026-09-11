@@ -7,8 +7,14 @@
  *   映射表（COMMANDS），是 dsh 斜杠侧的一条薄入口，与 opencode 的
  *   `commands-opencode/git/*.md`、自然语言触发互为入口。
  * - 每条命令注册到 ctx.commands（CommandDefinition：name/description/input.hint/
- *   handler），出现在 dsh 斜杠菜单；handler 校验必填输入后构造一条 user 消息，
- *   经 invocation.agent.followup() 注入当前会话，让 agent 按 git-kit 对应分支执行。
+ *   recordInput/handler），出现在 dsh 斜杠菜单；handler 校验必填输入后构造一条 user
+ *   消息，经 invocation.agent.followup() 注入当前会话，让 agent 按 git-kit 对应分支执行。
+ * - 统一 recordInput:false：用户输入已逐字写进下面注入的那条 user 消息（会话日志的
+ *   真实事件），若再让 command/run 记一份 args 就是同一 payload 落两份日志。按 dsh
+ *   官方指引（命令自身的权威事件已承载 payload 时置 false 以免重复）统一关掉。
+ *   注：斜杠菜单行的描述文本由 Host 原样透传到浏览器，dsh 只本地化它自己的一方差
+ *   命令（HOST_DESCRIPTION_KEYS），第三方命令描述不参与 i18n —— 故这里的 description
+ *   直接写中文，是有意为之。
  * - 本模块自包含：不读取 ai-kit 仓库内任何文件、无路径耦合、不依赖
  *   @deepseek-ai/* 运行时 import（消息对象手工构造为官方 createUserMessage 的
  *   契约形状：role/source/content/id 全齐）。改 git-kit skill 无需重启；
@@ -130,6 +136,8 @@ export function apply(ctx) {
 				name: def.name,
 				description: def.description,
 				...(def.hint === undefined ? {} : { input: { hint: def.hint } }),
+				// 输入已随注入的 user 消息入日志，不再让 command/run 重复记一份 args。
+				recordInput: false,
 				handler: makeHandler(def)
 			});
 		}
