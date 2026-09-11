@@ -34,8 +34,8 @@ ai-kit/
     ├── project-insight/       # 开源项目深度解读
     │   ├── references/        # 拆分的辅助逻辑
     │   └── scripts/           # 附带脚本
-    ├── design-doc/            # 技术方案/设计文档生成（原 tech-design-proposal）
-    │   ├── references/        # 模板/类型/质量红线/收尾
+    ├── tech-design/           # 技术方案/技术设计文档生成（原 tech-design-proposal / design-doc）
+    │   ├── references/        # 三档骨架/场景义务包/专题加固/量化估算/质量红线
     │   └── scripts/           # Mermaid 校验薄壳（复用 project-insight 引擎）
     └── svg-maker/             # 自包含纯 SVG 图表生成
         └── references/
@@ -47,7 +47,7 @@ ai-kit/
 |------|------|
 | `skills/git-kit` | Git 工作流辅助工具包，按意图路由到生成 commit message、提交推送、创建/切换分支、创建/更新 PR/MR、按编号合并 PR/MR 并回主干更新、给分支打版本标签并推送、仓库瘦身、分类 star。 |
 | `skills/project-insight` | 开源项目深度解读，产出每个论断都带可点开验证的真实源码引用（文件:行号），避免幻觉。 |
-| `skills/design-doc`（原 `tech-design-proposal`） | 编写技术方案/设计文档：先按复杂度定模板档（轻量/标准/完整），再按方案类型（架构/API/数据模型/性能/安全）裁剪，内嵌 Mermaid 图可脚本校验，产出结构完整、可执行、可评审的 Markdown 文档。 |
+| `skills/tech-design`（原 `tech-design-proposal`，曾用名 `design-doc`） | 编写技术方案/技术设计文档：三轴决策——**档位**（轻量/标准/完整）定篇幅、**场景**（新建/增量改造/结构重构/替换与迁移/下线与废弃/专项优化，单选）定叙事起点与过程义务（影响面与兼容、行为基线与等价性验证、对账与回退窗口、消费者盘点与下线判据）、**专题**（架构/API/数据模型/性能与容量/安全/迁移手法，可多选）定技术加固点；强制**量化义务**（性能/容量/可用性/成本的论断须给数字 + 口径 + 假设，量级表见 `quantification.md`）与**取舍对偶**（每个选型写代价与不该选的场景），内嵌 Mermaid 图可脚本校验，产出量化、可执行、可评审的 Markdown 文档。 |
 | `skills/svg-maker` | 生成自包含、纯 SVG 的架构图、流程图与概念图，可离线打开。 |
 
 每个 skill 目录下是一个 `SKILL.md`（含 frontmatter 定义触发条件），复杂逻辑可拆到 `references/` 子目录。`skills/` 下只放各技能的目录，不放置说明性文件（见下方"用法说明"）。

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// check-mermaid.mjs —— design-doc 的 Mermaid 校验入口（薄壳）
+// check-mermaid.mjs —— tech-design 的 Mermaid 校验入口（薄壳）
 //
 // 用法：
 //   node check-mermaid.mjs <file.md> [file2.md ...]
