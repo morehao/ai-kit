@@ -2,7 +2,11 @@
 
 > 由 SKILL.md「执行流程主干」的 step 1 判定为**全新模式**时按需加载：新项目冷启动解读的完整流程（step 1-9 + 分文件判定）。执行主干（路由总览）见 SKILL.md；类型判定与关注面触发判据见 [dimension-triggers.md](dimension-triggers.md)；落地目标判定/输出规范见 [kb-repo-rules.md](kb-repo-rules.md)。
 
-## 前置：确立根因先行
+## 前置一：基线工作树已就位（step 0.5）
+
+本流程的一切探索与校验都发生在 [version-baseline.md](version-baseline.md) 选定的**基线工作树**上（稳定 tag > 稳定分支 > 默认分支 > 无 main/master 兜底矩阵，由 `scripts/select-baseline.mjs` 程序化选定），该工作树 `realpath` 后的路径即 `source_repo` 与引用校验根。**基线未定不得进入下面的探索**——行号只在确定的快照上成立。用户显式指定 ref 时以用户为准，并在产物中声明"按用户指定 ref 解读，非稳定版"。
+
+## 前置二：确立根因先行
 
 读项目自述/README，一句写出"解决什么根本问题"。这是全篇的锚，防止写成功能罗列。
 
@@ -51,7 +55,7 @@ README → 架构/设计文档 → 目录树（推模块划分）→ 核心模�
 
 ## 真源校验（不可跳过）
 
-- **代码引用**：对本次产出的全部 md 跑 `node scripts/verify-references.mjs <kb_repo> <产物.md>...` → 逐条重定位（有首末行锚点指纹则精确校验，无指纹降级弱校验）→ `[GROUNDER-MISMATCH]` 用真实行号覆盖；`[GROUNDER-UNVERIFIED]` **保留原样并追加 `[UNVERIFIED]` 标记**，不静默通过，并在文末列出所有 `[UNVERIFIED]` 项提示人工复核；`[GROUNDER-TRAVERSAL]` 必须修复路径。退出码非 0 视为未通过。（用法与原理见 [grounding-guide.md](grounding-guide.md)。）
+- **代码引用**：对本次产出的全部 md 跑 `node scripts/verify-references.mjs <source_repo> <产物.md>...` → 逐条重定位（有首末行锚点指纹则精确校验，无指纹降级弱校验）→ `[GROUNDER-MISMATCH]` 用真实行号覆盖；`[GROUNDER-UNVERIFIED]` **保留原样并追加 `[UNVERIFIED]` 标记**，不静默通过，并在文末列出所有 `[UNVERIFIED]` 项提示人工复核；`[GROUNDER-TRAVERSAL]` 必须修复路径。退出码非 0 视为未通过。（用法与原理见 [grounding-guide.md](grounding-guide.md)。）**校验根 = 基线工作树**（见「前置一」）：脚本只读磁盘文件，若校验跑在与写作不同的树上，行号核对毫无意义。
 - **Mermaid 图**：对本次产出的全部 md 跑 `scripts/check-mermaid.mjs` → 任一 `[MERMAID-ERROR]` 修复至全 `OK`，不保留渲染报错图（详见 [writing-guide.md](writing-guide.md)「图表约束」）。
 
 ## 维护索引（收尾三步）

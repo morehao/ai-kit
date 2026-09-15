@@ -1,6 +1,6 @@
 ---
 name: project-insight
-description: 开源项目深度解读，产出每个论断都带可点开验证的真实源码引用（文件:行号），避免幻觉。当用户要求"分析、解读、洞察、深读、总结某个开源项目"、问"这个项目怎么实现的、值得学什么"，或要求解读文档附带可验证的真实源码引用时使用。输入通常是本地源码绝对路径，也可接受远端地址（自动浅克隆）。Also applies when the user asks to "analyze / examine / break down / deep-dive an open-source project", "how is this implemented", or "what's worth learning from this repo".
+description: 开源项目深度解读，产出每个论断都带可点开验证的真实源码引用（文件:行号），避免幻觉。当用户要求"分析、解读、洞察、深读、总结某个开源项目"、问"这个项目怎么实现的、值得学什么"，或要求解读文档附带可验证的真实源码引用时使用。输入通常是本地源码绝对路径，也可接受远端地址（自动按稳定 tag / 稳定分支选定基线后克隆，而非默认分支）。Also applies when the user asks to "analyze / examine / break down / deep-dive an open-source project", "how is this implemented", or "what's worth learning from this repo".
 ---
 
 # 开源项目洞察
@@ -27,6 +27,7 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 2. **图表程序校验**：产出所有 Mermaid 块落盘前跑 `scripts/check-mermaid.mjs`，任一 `[MERMAID-ERROR]` 修复至全 `OK`，不保留渲染报错图（见 [references/writing-guide.md](references/writing-guide.md)「图表约束」）。
 3. **增量先读、差异驱动**：增量模式下先读现有文档再动笔，每处变更必须能追溯到上游 diff / release notes（拿不到则声明代码快照比对）（见 [references/flow-incremental.md](references/flow-incremental.md)）。
 4. **只落盘，不代为提交**：本 skill 只写文件、更新索引，**不自动执行 git add/commit/push**；落地后列出变更文件清单，由用户决定是否提交。
+5. **基线先行**：动笔前先确定"这次解读基于哪个版本"——稳定 tag > 稳定分支 > 默认分支（main/master/远端 HEAD）> 无 main/master 兜底矩阵，由 `scripts/select-baseline.mjs` 程序化选定，不凭印象；选定后的工作树才是 `source_repo` 与引用校验根，且基线须写进产物（见 [references/version-baseline.md](references/version-baseline.md)）。基线不定就开写 = 行号必然漂移。
 
 ## 何时使用 / 何时不用
 
@@ -57,6 +58,7 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 | 步骤 | 做什么 | 按需加载 |
 |------|--------|---------|
 | 0 落地目标判定 | 输入规范化（realpath / 远端浅克隆）；`kb_repo` 判定（结构扫描 + 排除信号 + 用户选择分支） | [references/kb-repo-rules.md](references/kb-repo-rules.md) |
+| 0.5 版本基线选择 | 跑 `scripts/select-baseline.mjs` 选定基线（稳定 tag > 稳定分支 > 默认分支 > 无 main/master 兜底）→ 基线工作树作 `source_repo`/校验根 → 基线写进 README 概览 + CHANGELOG | [references/version-baseline.md](references/version-baseline.md) |
 | 1 模式判定 | 存在（或 grep 命中别名）→ 默认增量；**用户明确要求全量 → 删除既有解读（经确认）走全新**；不存在 → 全新 | 增量 → [references/flow-incremental.md](references/flow-incremental.md)；全新（含删后全量）→ step 2 |
 | 2 规模门控分流 | 复杂度×规模 → 路径 A/B/C/D（5 万行仅经验锚点，合理性优先） | [references/flow-new.md](references/flow-new.md)；路径 C → [references/large-repo-workflow.md](references/large-repo-workflow.md) |
 | 3 探索与数据模型探测 | README → 架构文档 → 目录树 → 核心模块 → 链路；其间跑「数据模型主动探测」 | [references/flow-new.md](references/flow-new.md)；命中 → [references/data-model-guide.md](references/data-model-guide.md) |
@@ -105,6 +107,7 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 ## 质量红线（提交前逐项自检，两模式均适用）
 
 - [ ] `kb_repo` 已通过判定或用户确认，不是凭 cwd 直接臆断
+- [ ] **基线已程序化选定并记录**：跑过 `scripts/select-baseline.mjs`（稳定 tag > 稳定分支 > 默认分支 > 无 main/master 兜底矩阵），`source_repo` 就是该基线的工作树（脏工作树未被静默覆盖，收尾已恢复原 HEAD）；基线已写进 README 概览一行 + `CHANGELOG.md` 顶部条目；`[BASELINE-STALE]` / `[BASELINE-AMBIGUOUS]` 已走用户确认（[references/version-baseline.md](references/version-baseline.md)）
 - [ ] 核心能力清单表 / 技术栈一览表 / 架构总览图（Mermaid）/ 至少一条启动流程或请求链路 / ≥2 处带 `仓库相对路径/文件.ext:行号` 的代码引用 / 根因说清
 - [ ] **定维度已纳入被分析项目 README 自述能力点**：README 宣传的核心能力已列为候选关注面并经源码探测——属实且够深则成文；与源码不符（过时/夸大）处已标注并剔除，未因"模板没列"而漏掉
 - [ ] 多关注面项目已按关注面拆子文档，未把全部内容压进单个 README；README 含独立「子文档索引」专章列全 + 「核心模块导读表」每行就近内链，新增即回写
@@ -124,7 +127,7 @@ description: 开源项目深度解读，产出每个论断都带可点开验证�
 - [ ] **所有代码引用经程序重定位验证**（`verify-references.mjs` 全过，非记忆行号）；定位失败已标 `[UNVERIFIED]` 并汇总列出；路径为仓库相对路径且未脱离仓库根（[references/grounding-guide.md](references/grounding-guide.md)）
 - [ ] **指纹注释仅首末行锚点**：每条引用后至多含区间首行 + 末行两行原文（各 ≤1 行、截断 ≤80 字符），无整段代码注释；锚点逐字复制、含 `--` 用 base64
 - [ ] **所有 Mermaid / SVG 图可渲染、不报错，且无 mermaid + svg 重复**；Mermaid 块已跑 `scripts/check-mermaid.mjs` 全 `OK`，`[MERMAID-WARN]`（`<br>` 换行 lint）已收敛为 0
-- [ ] 源码输入为本地绝对路径，`source_repo` 已用 `realpath` 规范化并作验证根
+- [ ] 源码输入为本地绝对路径，`source_repo` 已用 `realpath` 规范化并作验证根（= **选定基线的工作树**，不是随手一个 HEAD）
 - [ ] 落盘后已列出变更文件清单供用户决定是否提交，未擅自执行 git commit
 
 ## 常见错误与对策

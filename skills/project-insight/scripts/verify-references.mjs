@@ -2,8 +2,8 @@
 // verify-references.mjs —— 真源引用程序化校验（Grounding，防幻觉核心配套）。
 //
 // 用法：
-//   node verify-references.mjs <kb_repo> <解读.md> [file2.md ...]
-//     <kb_repo>  源码仓库根，作为所有 `文件:行号` 引用验证的锚点。
+//   node verify-references.mjs <source_repo> <解读.md> [file2.md ...]
+//     <source_repo>  源码仓库根（= 本次选定基线的工作树），作为所有 `文件:行号` 引用验证的锚点。
 //     其余参数  解读文档（本 skill 本次产出的全部 md）。
 //
 // 行为：
@@ -19,14 +19,14 @@
 //     旧 snippet 格式沿用整段搜索定位（见 locateSnippet）。
 //   - 无指纹注释时降级为弱校验：路径存在、文件可读、行号区间未越界即通过（标记 WEAK），
 //     提示补充指纹以获得精确行号验证。
-//   - 路径一律 realpath + commonpath 防穿越，越出 kb_repo 直接标记 TRAVERSAL。
+//   - 路径一律 realpath + commonpath 防穿越，越出 source_repo 直接标记 TRAVERSAL。
 //
 // 输出状态（TRAVERSAL / MISMATCH / UNVERIFIED 任一即非 0 退出码，不静默放过）：
 //   [GROUNDER-OK]          锚点/指纹定位成功且行号吻合
 //   [GROUNDER-MISMATCH]    定位成功但行号有偏差，打印真实行号供覆盖
 //   [GROUNDER-WEAK]        无指纹/锚点不合格，弱校验通过（文件可读、行号未越界），建议补指纹
 //   [GROUNDER-UNVERIFIED]  路径不存在 / 文件不可读 / 指纹定位失败（等价 [UNVERIFIED]）
-//   [GROUNDER-TRAVERSAL]   路径越出 kb_repo，已阻止
+//   [GROUNDER-TRAVERSAL]   路径越出 source_repo，已阻止
 //
 // 与 check-mermaid.mjs 同理：本脚本是校验工具，只读不改解读文档。
 
@@ -172,7 +172,7 @@ function safeResolve(repoRoot, relPath) {
   const repo = realpathSync(repoRoot);
   const resolved = resolve(join(repo, relPath));
   if (!isWithinRoot(repo, resolved)) {
-    return { status: 'traversal', path: null, reason: '路径经 resolve 后越出 kb_repo 根' };
+    return { status: 'traversal', path: null, reason: '路径经 resolve 后越出 source_repo 根' };
   }
   let real;
   try {
@@ -181,7 +181,7 @@ function safeResolve(repoRoot, relPath) {
     return { status: 'missing', path: null, reason: '目标不存在或不可解析' };
   }
   if (!isWithinRoot(repo, real)) {
-    return { status: 'traversal', path: null, reason: '路径经 realpath 解析后越出 kb_repo 根（符号链接逃逸）' };
+    return { status: 'traversal', path: null, reason: '路径经 realpath 解析后越出 source_repo 根（符号链接逃逸）' };
   }
   return { status: 'ok', path: real, reason: null };
 }
@@ -348,15 +348,15 @@ async function main() {
   if (args.length < 1) {
     console.error(
       diffMode
-        ? '用法：node verify-references.mjs --diff <kb_repo> [解读.md ...]'
-        : '用法：node verify-references.mjs <kb_repo> [解读.md ...]（解读.md 省略时从 stdin 读）',
+        ? '用法：node verify-references.mjs --diff <source_repo> [解读.md ...]'
+        : '用法：node verify-references.mjs <source_repo> [解读.md ...]（解读.md 省略时从 stdin 读）',
     );
     process.exit(2);
   }
   const repoRoot = resolve(args[0]);
   let repoReal;
   try { repoReal = realpathSync(repoRoot); } catch {
-    console.error(`[verify-references] kb_repo 路径不存在或不可读：${repoRoot}`);
+    console.error(`[verify-references] source_repo 路径不存在或不可读：${repoRoot}`);
     process.exit(2);
   }
 

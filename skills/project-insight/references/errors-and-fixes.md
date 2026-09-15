@@ -11,6 +11,13 @@
 | 凭感受大改结构 | 结构是资产，既有 `##` 章节原样保留。 |
 | 只改正文、漏掉能力清单/技术栈/图表里的数字 | 全篇 grep 核对所有出现处。 |
 | 文档自称 v0.8 却没核对真实上游版本/diff | 增量铁律 3：先取真实依据；拿不到就声明代码快照比对。 |
+| 没定基线就开写（随手拿 cwd / 默认分支当解读对象） | 先跑 `scripts/select-baseline.mjs`：稳定 tag > 稳定分支 > 默认分支 > 无 main/master 兜底；基线未定不得进入探索（[version-baseline.md](version-baseline.md)）。 |
+| 远端地址裸 `git clone --depth=1`，恒取默认分支、还丢了 tags | 先 `git ls-remote`（tags/heads/symref HEAD）枚举选基线，再 `clone --branch <ref>`；需要 diff 历史用 `--filter=blob:none`。 |
+| 仓库没有 main/master 就认为无法分析，或默默挑当前分支 | 走兜底矩阵（远端 HEAD → `origin/HEAD` → 非特性当前分支 → `trunk`/`develop`/`default`/`next` → 最近的非特性分支 → 最新 tag），全空才交用户；特性分支永远不当主干。 |
+| 把最新 tag 直接当"稳定版"解读（它可能已停更多年） | `[BASELINE-STALE]`（落后默认分支超阈值 / 距今过久）必须请用户确认，并在产物中注明"已确认接受其陈旧度"。 |
+| 校验在 A 份代码上、写作在 B 份代码上 | `source_repo` 必须是**基线工作树**，探索/写作/`verify-references.mjs` 三者同一棵树（脚本只读磁盘，换树则行号核对无意义）。 |
+| 在用户脏工作树上直接 `git checkout` 覆盖未提交改动 | 先 `git status --porcelain`；脏树不静默覆盖，走 `git worktree add` 兜底或经确认后 stash；收尾恢复原 HEAD 并报告。 |
+| 解读完没记录基线，下次增量不知 diff 起点 | 基线写进 README 概览「解读基线：`<ref>`（`<sha>`）」+ `CHANGELOG.md` 顶部「依据：`<ref>@<sha>`」；不写 frontmatter（版本类字段仍不入 frontmatter）。 |
 | 新建文档后忘了更新分类索引 | 收尾三步不能跳。 |
 | 把 README 翻译一遍充深度 | 这是提炼不是翻译；深度不足标 [WIP]，按 analysis-guide 写深。 |
 | 默认堆满完整代码块当深度 | 叙述优先：设计观点写成散文，编码细节用 `文件:行号` 指向源码，仅用户明确要求某具体实现时才贴码（见 [grounding-guide.md](grounding-guide.md)）。 |
