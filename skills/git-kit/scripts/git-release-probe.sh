@@ -5,14 +5,16 @@
 # 确认版本号与版本文件，再执行「升版本 → 提交 → 打 tag → 推送 → 验证」。
 #
 # 用法:
-#   bash scripts/git-release-probe.sh [目标仓库]
+#   bash <skill基目录>/scripts/git-release-probe.sh [目标仓库]
 #     目标仓库缺省时优先 upstream、回退 origin（与 pr-create/pr-merge 一致）。
+#     可在任意目录调用：脚本自行切到 git 仓库根后再探测（版本文件与工作流均为
+#     CWD 相对，故必须先定位仓库根，否则子目录调用会漏探测）。
 #
 # 退出码: 0 = 探测完成（部分事实可为空）；1 = 不在 git 仓库内或用法错误。
 set -uo pipefail
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
-	sed -n '2,9p' "$0"
+	sed -n '2,13p' "$0"
 	exit 0
 fi
 
@@ -20,6 +22,9 @@ if ! git rev-parse --git-dir >/dev/null 2>&1; then
 	echo "ERROR: 当前目录不是 git 仓库" >&2
 	exit 1
 fi
+
+# 版本文件、包元数据、CI 工作流探测全部是 CWD 相对，统一切到仓库根。
+cd "$(git rev-parse --show-toplevel)" || exit 1
 
 REMOTE="${1:-}"
 if [ -z "$REMOTE" ]; then

@@ -51,7 +51,7 @@ Git 常见操作的统一入口。先按「意图路由」理解用户要做什�
 - `branch`：`read references/branch.md`。
 - `pr-create`：`read references/pr-create.md`。
 - `pr-merge`：`read references/pr-merge.md`。
-- `release`：`read references/release.md`，按其中指引运行 `scripts/git-release-probe.sh`（只读探测，单一真源；打 tag 步骤复用 `references/tag.md` 规则）。
+- `release`：`read references/release.md`，按其中指引运行 `<skill 基目录>/scripts/git-release-probe.sh`（只读探测，可在任意目录运行、脚本自行定位仓库根；单一真源，打 tag 步骤复用 `references/tag.md` 规则）。
 - `tag`：`read references/tag.md`。
 - `slim`：`read references/slim.md`，按其中指引运行 `scripts/git-slim.sh`（脚本为单一真源，与 `/git/slim` 命令共用）。
 - `star-classify`：`read references/star-classify.md`，按其中指引运行 `scripts/git-star.sh`。

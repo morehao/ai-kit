@@ -11,7 +11,7 @@
 1. **前置检查**
    - 工作区必须干净：`git status --porcelain` 为空；有未提交改动 → 提示先走 `commit-push` 或 stash，**不代提交**
    - 当前分支须可发布：`main`/`master`，或含 `release` 关键字的稳定分支；在 feature/fix 等分支上 → 停，询问是否先合并到主干
-   - **只读探测**（在 skill 基目录下）：`bash scripts/git-release-probe.sh`（单一真源，不修改任何东西），读这些事实：
+   - **只读探测**（单一真源，不修改任何东西）：`bash <skill 基目录>/scripts/git-release-probe.sh`；可在**任意目录**调用，脚本会自行切到 git 仓库根再探测（版本文件与 CI 工作流均为 CWD 相对，不要用父目录或子目录当工作目录去手工复刻探测）。读这些事实：
      `REMOTE` / `REMOTE_URL` / `BRANCH` / `DIRTY` / `LATEST_TAG` / `TAG_PREFIX` / `NEXT`（patch minor major 三档）/ `FILE <路径> <版本>` / `VERSION_CONSISTENT` / `NPM_PACKAGE` / `NPM_PRIVATE` / `WORKFLOW <文件> <tag 模式>`
    - 同步远端：`git fetch <REMOTE> --tags`
 2. **确定版本号**（未确认前不改文件、不打 tag）
