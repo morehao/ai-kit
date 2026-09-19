@@ -2,6 +2,8 @@
 
 给选定分支的**远端最新提交**打注记 tag（annotated）并推送到远端。不切换分支、不修改工作区。仓库尚无 tag 时如实报告并走「首个版本」流程。
 
+> 本分支**只打 tag、不改仓库文件**。要连版本文件一起升、并验证发布结果（端到端发版）→ 走 `release` 分支（`references/release.md`），其打 tag 步骤与本文件规则一致。
+
 ## 执行流程
 
 1. **目标仓库**：同 pr-create/pr-merge，优先 `upstream`，回退 `origin`；`git remote get-url <目标仓库>` 确认存在可访问

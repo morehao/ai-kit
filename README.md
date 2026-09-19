@@ -16,6 +16,7 @@ ai-kit/
 │       ├── message.md
 │       ├── pr-create.md
 │       ├── pr-merge.md
+│       ├── release.md
 │       ├── tag.md
 │       ├── commit-push.md
 │       ├── slim.md
@@ -28,7 +29,7 @@ ai-kit/
 ├── scripts/
 │   └── dsh-install.sh         # dsh 一键接入：软链 skills + 注册 commands-dsh 插件
 └── skills/                    # 技能（opencode 与 dsh 共用）
-    ├── git-kit/               # Git 工作流辅助（message/commit-push/branch/pr-create/pr-merge/tag/slim/star）
+    ├── git-kit/               # Git 工作流辅助（message/commit-push/branch/pr-create/pr-merge/release/tag/slim/star）
     │   ├── references/        # 拆分的辅助逻辑
     │   └── scripts/           # 附带脚本
     ├── project-insight/       # 开源项目深度解读
@@ -45,7 +46,7 @@ ai-kit/
 
 | 路径 | 功能 |
 |------|------|
-| `skills/git-kit` | Git 工作流辅助工具包，按意图路由到生成 commit message、提交推送、创建/切换分支、创建/更新 PR/MR、按编号合并 PR/MR 并回主干更新、给分支打版本标签并推送、仓库瘦身、分类 star。 |
+| `skills/git-kit` | Git 工作流辅助工具包，按意图路由到生成 commit message、提交推送、创建/切换分支、创建/更新 PR/MR、按编号合并 PR/MR 并回主干更新、端到端发版（升版本+提交+打 tag+推送+验证发布）、只打版本标签并推送、仓库瘦身、分类 star。 |
 | `skills/project-insight` | 开源项目深度解读，产出每个论断都带可点开验证的真实源码引用（文件:行号），避免幻觉。 |
 | `skills/tech-design`（原 `tech-design-proposal`，曾用名 `design-doc`） | 编写技术方案/技术设计文档：三轴决策——**档位**（轻量/标准/完整）定篇幅、**场景**（新建/增量改造/结构重构/替换与迁移/下线与废弃/专项优化，单选）定叙事起点与过程义务（影响面与兼容、行为基线与等价性验证、对账与回退窗口、消费者盘点与下线判据）、**专题**（架构/API/数据模型/性能与容量/安全/迁移手法，可多选）定技术加固点；强制**量化义务**（性能/容量/可用性/成本的论断须给数字 + 口径 + 假设，量级表见 `quantification.md`）与**取舍对偶**（每个选型写代价与不该选的场景），内嵌 Mermaid 图可脚本校验，产出量化、可执行、可评审的 Markdown 文档。 |
 | `skills/svg-maker` | 生成自包含、纯 SVG 的架构图、流程图与概念图，可离线打开。 |
@@ -63,8 +64,9 @@ ai-kit/
 | `commands-opencode/git/branch` | 基于中文描述生成候选分支名，选择后从基准分支创建并切换 |
 | `commands-opencode/git/message` | 将中文描述转换为 Conventional Commits 格式的 commit message（纯生成，不提交） |
 | `commands-opencode/git/pr-create` | 基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab） |
-| `commands-opencode/git/pr-merge` | 按编号合并 PR/MR，删除原分支，切回主干并更新代码（自动识别 gh/glab） |
-| `commands-opencode/git/tag` | 查看最新 tag 与来源分支，选择要打 tag 的分支与版本号，构建注记 tag 并推送 |
+| `commands-opencode/git/pr-merge` | 按编号合并 PR/MR，删除原分支（release 等发布分支保留），切回主干并更新代码（自动识别 gh/glab） |
+| `commands-opencode/git/release` | 端到端发版：探测版本文件与最新 tag，确认版本号后升版本、提交、打 tag、推送并验证发布结果 |
+| `commands-opencode/git/tag` | 查看最新 tag 与来源分支，选择要打 tag 的分支与版本号，构建注记 tag 并推送（不改仓库文件） |
 | `commands-opencode/git/commit-push` | 基于代码变更自动生成 commit message 并执行提交推送 |
 | `commands-opencode/git/slim` | 将当前 git 仓库瘦身为浅克隆，默认保留 30 天历史 |
 | `commands-opencode/git/star-classify` | 拉取并分类自己的 GitHub star 仓库，输出中文分组清单 |
@@ -73,7 +75,7 @@ ai-kit/
 
 ## dsh 接入（可选）
 
-`commands-dsh/` 以 **dsh 原生命令**形式暴露 git-kit 工作流：`/git-message`、`/git-commit-push`、`/git-branch`、`/git-pr-create`、`/git-pr-merge`、`/git-tag`、`/git-slim`、`/git-star-classify`。插件是**自包含意图表**（一行声明 = 命令名 + git-kit 分支 key），命令执行时向当前 agent 注入一条加载 git-kit 并按其分支执行的指令——与 opencode 入口共用 git-kit、单一真源，编辑 `skills/git-kit/` 即同步生效（改插件 `lib/index.js` 需重启 dsh web）。
+`commands-dsh/` 以 **dsh 原生命令**形式暴露 git-kit 工作流：`/git-message`、`/git-commit-push`、`/git-branch`、`/git-pr-create`、`/git-pr-merge`、`/git-release`、`/git-tag`、`/git-slim`、`/git-star-classify`。插件是**自包含意图表**（一行声明 = 命令名 + git-kit 分支 key），命令执行时向当前 agent 注入一条加载 git-kit 并按其分支执行的指令——与 opencode 入口共用 git-kit、单一真源，编辑 `skills/git-kit/` 即同步生效（改插件 `lib/index.js` 需重启 dsh web）。
 
 一键接入（幂等，可重复执行）：
 

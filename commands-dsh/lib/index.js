@@ -21,7 +21,7 @@
  *   改本文件（含 COMMANDS 表）需重启 dsh web。
  *
  * git-kit 分支 key 词汇表（与 SKILL.md 决策树对齐）：
- *   commit-push / commit-message / branch / pr-create / pr-merge / tag / slim / star-classify
+ *   commit-push / commit-message / branch / pr-create / pr-merge / release / tag / slim / star-classify
  */
 
 import { randomUUID } from "node:crypto";
@@ -63,13 +63,19 @@ const COMMANDS = [
 		name: "git-pr-merge",
 		branch: "pr-merge",
 		hint: "[PR/MR 编号]",
-		description: "按编号合并 PR/MR（自动识别 gh/glab），删除原分支，切回主干并更新代码"
+		description: "按编号合并 PR/MR（自动识别 gh/glab），删除原分支（release 等发布分支保留），切回主干并更新代码"
+	},
+	{
+		name: "git-release",
+		branch: "release",
+		hint: "[版本号或 --patch/--minor/--major]",
+		description: "端到端发版：探测版本文件与最新 tag，确认版本号后升版本、提交、打 tag、推送并验证发布结果"
 	},
 	{
 		name: "git-tag",
 		branch: "tag",
 		hint: "[tag名或分支名]",
-		description: "查看最新 tag 与来源分支，选择分支与版本号，构建注记 tag 并推送到远端"
+		description: "查看最新 tag 与来源分支，选择分支与版本号，构建注记 tag 并推送到远端（不改仓库文件）"
 	},
 	{
 		name: "git-slim",
@@ -106,7 +112,7 @@ function buildInstruction(def, input) {
 		`用户请求：${input.length > 0 ? input : "（未附加说明，按分支流程默认处理）"}`,
 		"",
 		`请用 skill 工具加载 git-kit，将本次请求视为 ${def.branch} 分支并按该分支的完整流程执行。`,
-		"如需用户决策（候选分支名 / PR·MR 编号 / tag 版本号 / 保留天数等），先向用户确认再继续。"
+		"如需用户决策（候选分支名 / PR·MR 编号 / 发版版本号 / tag 版本号 / 保留天数等），先向用户确认再继续。"
 	].join("\n");
 }
 

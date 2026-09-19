@@ -1,5 +1,5 @@
 ---
-description: 按编号合并 PR/MR（自动识别 gh/glab），删除原分支，切回主干并更新代码
+description: 按编号合并 PR/MR（自动识别 gh/glab），删除原分支（release 等发布分支保留），切回主干并更新代码
 ---
 
 # 任务

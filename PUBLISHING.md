@@ -58,6 +58,8 @@
    - 否则 OIDC：`npm publish --provenance --access public --registry https://registry.npmjs.org`。
 
 > 提示：tag 版本与 `package.json` 版本必须一致，否则 `ci-publish.sh` 会以非零退出并阻止发布（这是防误发的守卫）。
+>
+> 上述第 1、2 步（升版本 → 提交 push → 打 tag → 推送 → 验证发布）已由 **git-kit 的 `release` 分支**自动化：opencode 侧 `/git/release`、dsh 侧 `/git-release`，或直接说「发版 / 发布新版本」。它会先用 `skills/git-kit/scripts/git-release-probe.sh` 探测版本文件（本仓库即 `commands-dsh/package.json`）、最新 tag 与下一版本候选，**经用户确认**后才改文件、提交、打 tag 并验证发布结果。只打 tag、不动版本文件时才走 `tag` 分支（`/git/tag`）。
 
 ## 3. 一次性 npm 侧设置（新建包时）
 
