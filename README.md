@@ -73,20 +73,44 @@ ai-kit/
 
 ## dsh 接入（可选）
 
-`commands-dsh/` 以 **dsh 原生命令**形式暴露 git-kit 工作流：`/git-message`、`/git-commit-push`、`/git-branch`、`/git-pr-create`、`/git-pr-merge`、`/git-tag`、`/git-slim`、`/git-star-classify`。插件是**自包含意图表**（一行声明 = 命令名 + git-kit 分支 key），命令执行时向当前 agent 注入一条加载 git-kit 并按其分支执行的指令——与 opencode 入口共用 git-kit、单一真源，编辑 `skills/git-kit/` 即同步生效（改插件 `lib/index.js` 需重启 dsh web）。
+`commands-dsh/` 以 **dsh 原生命令**形式暴露 git-kit 工作流：`/git-message`、`/git-commit-push`、`/git-branch`、`/git-pr-create`、`/git-pr-merge`、`/git-tag`、`/git-slim`、`/git-star-classify`。插件是**自包含意图表**（一行声明 = 命令名 + git-kit 分支 key），命令执行时向当前 agent 注入一条加载 git-kit 并按其分支执行的指令——与 opencode 入口共用 git-kit、单一真源，编辑 `skills/git-kit/` 即同步生效（改插件 `lib/index.js` 需重启 dsh）。
 
 一键接入（幂等，可重复执行）：
 
 ```bash
-./scripts/dsh-install.sh        # 默认接入 web profile；可用 DSH_PROFILE=<name> 指定
-# 完成后重启 dsh web
+./scripts/dsh-install.sh --skills-only     # 只挂技能：零副作用、不需要 dsh CLI —— 最常用的安全子集
+./scripts/dsh-install.sh                    # 全量接入：技能 + 插件注册（profile 自动解析）
+./scripts/dsh-install.sh --profile desktop   # 显式指定 profile（等价 DSH_PROFILE=desktop）
+DSH_USE_NPM=1 ./scripts/dsh-install.sh       # 插件改走 npm 已发布包，而非本地 link:
+# 插件变更后重启 dsh；技能是热加载的，不用重启
 ```
 
-脚本做两件事：① 软链 `skills/*` 到 `$DSH_HOME/skills`（默认 `~/.dsh/skills`）；② `dsh plugin --profile web add link:<本仓库>/commands-dsh`（`link:` 为真软链，源码改动即生效；自动追加进 profile 的 bundles）。
+脚本做两件事：① 软链 `skills/*` 到 `$DSH_HOME/skills`（默认 `~/.dsh/skills`，**全局生效**）；② `dsh plugin --profile <profile> add link:<本仓库>/commands-dsh`（`link:` 为真软链，源码改动即生效；自动追加进 profile 的 bundles）。传 `--skills-only` 则只做第 ① 步。
 
-> 插件已发布到 npm（`@morehao/dsh-commands`），也可只装命令插件本体：`dsh plugin --profile web add @morehao/dsh-commands`。注意 git-kit skill 仍需来自本仓库（dsh 不从 node_modules 扫描 skill），所以用 npm 方式时请另行软链 `skills/*` 或执行本脚本的 skills 步骤。发包/更新到 npm 的完整流程见 [PUBLISHING.md](PUBLISHING.md)。
+> **profile 不再硬编码**（早期版本写死 `web`，与实际安装不符时会凭空造出一个 profile，命令却不出现在你正在用的客户端里）。现在的优先级是：`--profile <name>` > `$DSH_PROFILE` > 「`$DSH_HOME/profiles` 下**唯一**存在的 profile」。多个或零个 profile 时会报错并列出候选，绝不会替你新建。
+>
+> `dsh` CLI 也**不要求先在 PATH 上**：脚本找不到时会回退到 macOS 桌面版 app 包内的 `<DeepSeek Harness.app>/Contents/Resources/runtime/cli/bin/dsh`，并提示先退出客户端再执行插件步骤（避免两边并发改写 profile 配置）；确实找不到才报错，且第 ① 步的技能软链此时已经完成。
 
-卸载：`dsh plugin --profile web remove @morehao/dsh-commands`，再删除对应的 skill 软链即可。（旧版曾以 `dsh-git-commands` 或 `@morehao/dsh-git-commands` 安装过：对应 `dsh plugin --profile web remove dsh-git-commands` / `dsh plugin --profile web remove @morehao/dsh-git-commands`。）
+**想手动做第 ① 步**（等效 `--skills-only`，不跑脚本）：
+
+```bash
+mkdir -p "$DSH_HOME/skills"     # 默认 ~/.dsh/skills；这是 dsh 的**用户级**技能根
+for name in git-kit project-insight svg-maker tech-design; do
+  ln -sfn "<本仓库>/skills/$name" "$DSH_HOME/skills/$name"
+done
+ls -la "$DSH_HOME/skills"       # 验证：4 条软链均无悬空
+```
+
+dsh 侧技能目录约定（`skills/` 是**全局**的，软链后所有项目可用）：
+- 用户级 `<dshHome>/skills` = `~/.dsh/skills` ← 本仓库软链目标
+- 项目级 `<项目根>/.dsh/skills`（项目根 = 最近的含 `.git` 祖先目录）
+- 另扫描 `~/.agents/skills` 与 `<项目根>/.agents/skills`
+
+经软链注册的技能在 dsh 技能面板中带 `linked` 标记、为**只读**（禁用编辑/删除），正好避免误改真源。**技能是热加载的**：新增软链后无需重启，新会话与技能面板立即能看到；只有插件 `lib/index.js` 的改动才需要重启。
+
+> 插件已发布到 npm（`@morehao/dsh-commands`），也可只装命令插件本体：`dsh plugin --profile <profile> add @morehao/dsh-commands`（`<profile>` 同样以实际为准）。注意 skills **仍需来自本仓库**（dsh 不从 node_modules 扫描 skill），所以用 npm 方式时请另行软链 `skills/*` 或执行上面的 skills 步骤。发包/更新到 npm 的完整流程见 [PUBLISHING.md](PUBLISHING.md)。
+
+卸载：`dsh plugin --profile <profile> remove @morehao/dsh-commands`，再删除对应的 skill 软链（`rm ~/.dsh/skills/<name>`）即可。（旧版曾以 `dsh-git-commands` 或 `@morehao/dsh-git-commands` 安装过：对应 `dsh plugin --profile <profile> remove dsh-git-commands` / `dsh plugin --profile <profile> remove @morehao/dsh-git-commands`。）
 
 详见 [commands-dsh/README.md](commands-dsh/README.md)。
 
