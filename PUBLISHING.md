@@ -47,17 +47,20 @@
 
 ## 2. 日常发新版（操作手册）
 
-1. **升版本**：改 `commands-dsh/package.json` 的 `version`（如 `0.1.0` → `0.2.0`），如有需要同步 `commands-dsh/README.md`；提交并 push 到 `main`。
-2. **打 tag**（去掉 `v` 前缀，与 package.json 版本一致）：
+> **稳定分支不接受直接提交，发版升版本也不例外。** 升版本走 `git-kit`：`commit-push`（起点是稳定分支时自动建工作分支）→ `pr-create` → `pr-merge` 合并到 `main`。规则单一定义在 `skills/git-kit/references/stable-branch.md`；打 tag 侧的约束见 `skills/git-kit/references/tag.md`「发版约束」。
+
+1. **升版本**：改 `commands-dsh/package.json` 的 `version`（如 `0.1.1` → `0.2.0`），如有需要同步 `commands-dsh/README.md`；**在分支上提交**并 push，再开 PR 合并到 `main`（`/git/commit-push` → `/git/pr-create` → `/git/pr-merge`）。
+2. **打 tag**（在**合并后**的 `main` 最新提交上打；去掉 `v` 前缀，与 package.json 版本一致）：
    ```bash
-   git tag v0.2.0 && git push origin v0.2.0
+   git switch main && git pull --ff-only origin main
+   git tag -a v0.2.0 -m "release: v0.2.0" origin/main && git push origin v0.2.0
    ```
 3. **自动发布**：workflow 收到 tag（`on: push: tags: ['v*']`）后：
    - 读 `RELEASE_TAG=v0.2.0` → 校验 `0.2.0 == commands-dsh/package.json.version`（**不一致拒绝发布**）。
    - 若 npmjs 已存在 `0.2.0` → **跳过**（幂等）。
    - 否则 OIDC：`npm publish --provenance --access public --registry https://registry.npmjs.org`。
 
-> 提示：tag 版本与 `package.json` 版本必须一致，否则 `ci-publish.sh` 会以非零退出并阻止发布（这是防误发的守卫）。
+> 提示：tag 版本与 `package.json` 版本必须一致，否则 `ci-publish.sh` 会以非零退出并阻止发布（这是防误发的守卫）。tag 打在合并后的 `main` 提交上即可——版本号是随 PR 一起进 `main` 的，不需要单独为它破例直推。
 
 ## 3. 一次性 npm 侧设置（新建包时）
 

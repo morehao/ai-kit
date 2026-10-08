@@ -4,7 +4,7 @@
 
 ## 执行流程（每步失败立即停并报告错误，不得跳过提交/推送）
 
-1. **判断稳定分支**：`git branch --show-current` 确认当前分支；为稳定分支（`main`/`master`，或分支名含 `release` 关键字）时先**自动建分支**（见下方「稳定分支自动建分支」），切换后再继续
+1. **判断稳定分支**：`git branch --show-current` 确认当前分支；命中 `references/stable-branch.md` 的**唯一定义**（主干/集成分支、目标仓库默认分支、发布/稳定/维护分支、版本线分支）时先**自动建分支**（见下方「稳定分支自动建分支」），切换后再继续。**发版升版本也不例外**
 2. **暂存**：`git add -A`
 3. **分析**：`git diff --staged` + `git status`，推断模块/scope，按主要意图归纳为单条 message
 4. **生成**：按 `commit-format.md` 规则生成；scope 额外叠加：从变更文件路径提取模块名（如 `src/auth/` → `auth`），多模块取主要模块，无归属则不加
@@ -13,7 +13,7 @@
 
 ## 稳定分支自动建分支（在稳定分支时执行）
 
-稳定分支判定：分支名为 `main`/`master`，或分支名含 `release` 关键字（如 `release/2.0.0`、`release-2.0`、`v2.0-release`，命名不要求统一）。
+稳定分支判定：**唯一定义在 `references/stable-branch.md`**（本文不再复述判定表）。发版升版本（改 `commands-dsh/package.json` 的 `version`）**不豁免**——同样走本流程建分支，再走 PR 合并 `main`，合并后才打 tag（顺序与守卫见 `references/tag.md`「发版约束」与 `PUBLISHING.md`）。
 
 稳定分支不允许直接提交，先基于代码变动自动创建分支再走后续流程，避免污染稳定分支：
 
@@ -30,7 +30,7 @@
 
 ## 注意事项
 
-- **稳定分支约束**：当前分支为稳定分支（`main`/`master` 或含 `release` 关键字）且**确有代码变动**时，才自动建分支后提交；其他分支直接提交。无论哪条，**无变动一律不建分支、不提交**（如实报告）
+- **稳定分支约束**：当前分支命中 `references/stable-branch.md` 的稳定分支定义且**确有代码变动**时，才自动建分支后提交；其他分支直接提交。**发版升版本不是例外**（改 `version` 也要建分支 → PR → 合并，见 `PUBLISHING.md`）。无论哪条，**无变动一律不建分支、不提交**（如实报告）
 - message 内不要包含双引号 `"`，避免破坏 `git commit -m "..."` 的引号配对
 - 若 `git commit` 报 `nothing to commit`（工作区无变更）或 `git add` 无内容，如实报告当前状态，不继续提交
 
@@ -40,4 +40,5 @@
 - 未执行提交（只给文字）即失败，继续提交
 - `git add/commit/push` 任一报错 → 停并完整报告，不伪造成功
 - message 不含 `"`（防引号配对损坏）
+- 起点为稳定分支时必须落在新建工作分支上（`git branch --show-current` 不再是那个稳定分支）才算通过；**直接提交到稳定分支 = 失败**
 - `nothing to commit` / `git add` 无内容 → 如实报告，不继续

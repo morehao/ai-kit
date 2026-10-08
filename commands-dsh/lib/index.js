@@ -44,7 +44,7 @@ const COMMANDS = [
 	{
 		name: "git-commit-push",
 		branch: "commit-push",
-		description: "基于代码变更生成 commit message 并自动提交推送到远端；稳定分支（main/master/含 release）时自动创建分支"
+		description: "基于代码变更生成 commit message 并自动提交推送到远端；稳定分支（主干/集成分支、发布/稳定/维护分支、版本线分支）时自动创建分支"
 	},
 	{
 		name: "git-branch",

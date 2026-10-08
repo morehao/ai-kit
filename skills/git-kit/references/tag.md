@@ -11,10 +11,11 @@
    - 来源分支：`git log -1 --format='%h %s' <tag>` 看 tag 指向的提交；`git branch -r --contains <tag>` 看哪些远端分支包含它，优先展示与 tag 提交同步（HEAD 指向同一提交）的分支，无则展示全部包含它的分支
    - **无 tag** → 如实报告「仓库尚无 tag」，按下方「无 tag」规则继续
 4. **候选分支（让用户选）**：
-   - 稳定分支优先：`main`/`master`，或**分支名含 `release` 关键字**（如 `release/2.0.0`、`release-2.0`、`v2.0-release`，命名不要求统一）
+   - 稳定分支优先：按 `references/stable-branch.md` 的**唯一定义**（主干/集成分支、发布/稳定/维护分支、版本线分支）。此处是**偏好而非禁止**——非稳定分支若比最新 tag 更新也照常列入候选
    - 其余：`<目标仓库>/<branch>` 中 `git log <latest-tag>..<目标仓库>/<branch>` 有提交的分支（比最新 tag 新、值得打 tag）；无 tag 时列出全部远端分支
    - 展示编号让用户选（1/2/3…），也允许用户直接输入分支名
 5. **候选 tag（让用户选）**：
+   - **先核对发布包版本**：读发布包的 `package.json` 的 `version`（本仓 `commands-dsh/package.json`），候选 tag 须与其一致，详见下方「发版约束」
    - 有最新 tag 且为 semver（`v?X.Y.Z`）：按递增档提议 3 个候选 patch/minor/major（如 `v1.2.3` → `v1.2.4` / `v1.3.0` / `v2.0.0`），沿用现有 tag 的 `v` 前缀风格
    - **无 tag**：提议首个版本 `v0.1.0` 与 `v1.0.0`（默认 `v` 前缀）
    - 选择含 `release` 的分支且分支名带版本号时，候选 tag 优先从分支名推断（如 `release/2.0.0`、`release-v2.0` → `v2.0.0`），作为第 1 个候选
@@ -24,6 +25,16 @@
 7. **构建并推送**（同一 bash 链式，防半途）：
    `git fetch <目标仓库> --tags && git tag -a <tag> -m "release: <tag>" <目标仓库>/<branch> && git push <目标仓库> <tag> && echo "TAG_PUSH_OK"`
 8. **验证**：输出出现 `TAG_PUSH_OK`，且 `git ls-remote --tags <目标仓库> <tag>` 与本地 `git tag -l <tag>` 均可见
+
+## 发版约束（目标仓库的 `v*` tag 会触发发布时必读）
+
+若打了 `v*` tag 会触发发布工作流（本仓：`.github/workflows/release.yml` → `scripts/ci-publish.sh`），打 tag 前必须先对齐版本号：
+
+- **硬守卫**：tag 版本（去掉 `v` 前缀）必须等于发布包 `package.json` 的 `version`（本仓 `commands-dsh/package.json`），否则发布脚本直接 `exit 1` 拒绝发布。不一致的 tag **不会误发**，但会白占一个 tag 名 + 留一条失败 run（tag 已推送，改名须删除重打）。
+- **顺序**：候选 tag 与当前版本不一致时 → **先升版本**：改 `package.json` 的 `version` → 走 `commit-push`（起点是稳定分支时自动建分支）→ 走 `pr-create` 建 PR → 合并 `main`，**合并后**才在本流程打 tag（tag 指向 `main` 的最新提交，即含升版本的那次合并提交）。完整手册见 `PUBLISHING.md`「日常发新版」。
+- 升版本提交**不得**直接落在稳定分支上——发版不构成例外（`references/stable-branch.md`）。
+- **不得**为绕过守卫擅自打不一致的 tag；用户明确要求「只打 tag、不管发布」时才照办，并在报告中写明发布工作流预期会失败。
+- 幂等：npmjs 已存在该版本 → 工作流跳过（exit 0），重复打 tag 不会重复发布。
 
 ## 注意事项
 
@@ -37,4 +48,5 @@
 - 本地与远端均可见新 tag，输出 `TAG_PUSH_OK`
 - 未真正创建/推送（只列候选/只给文字）即失败，继续执行
 - 任一步报错（网络/权限/tag 冲突/分支不存在）→ 停并完整报告原始报错，不伪造成功
-- 当前分支与工作区保持不变（打 tag 不改文件）
+- 当前分支与工作区保持不变（打 tag 不改文件；升版本属前置的 `commit-push` + `pr-create` 流程，不在本分支内做）
+- 有发布工作流时：tag 版本 == 发布包 `package.json` 版本，或有用户明确的「只打 tag 不发布」授权（见「发版约束」）
