@@ -2,8 +2,18 @@
 
 Copy this to a `.svg` file and replace `<!-- SVG -->`.
 
+交付前自查（下游 `project-insight` 会程序化校验）：
+
+- 根元素**只写 `viewBox`**，不写 `width`/`height`。
+- **`<title>` 与 `<desc>` 必写，且都不带属性**（写 `<title>`，不要写 `<title id="...">`）。
+- 自包含：无 `<image>` / `<script>` / 远程字体 / 渐变；样式内联在 `<style>`。
+- 固定 `viewBox`、可离线双击打开；浅深色都能读（`:root` 变量 + `prefers-color-scheme`）。
+
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+  <!-- title/desc 必写，且不要加 id 等属性（下游按标签名匹配，带属性容易被判缺失） -->
+  <title>图的主标题：一句话说清这张图在讲什么</title>
+  <desc>中文描述（150-200 字）：这张图表达了什么、有哪些分组与流向、读者该从中看出什么。</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
             markerWidth="6" markerHeight="6" orient="auto-start-reverse">

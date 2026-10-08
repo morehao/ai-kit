@@ -52,7 +52,7 @@ Gateway 把"连接为什么失败"变成可观测：close 时把 `closeCause`/`p
 
 ## 收尾校验（脚本用法统一出处）
 
-落盘前对**本次产出的全部 md** 依次跑两个校验脚本，任一非 0 退出码视为未通过：
+落盘前对**本次产出的全部 md** 依次跑校验脚本，任一非 0 退出码视为未通过：
 
 ```bash
 # 在 skill 的 scripts/ 目录下（依赖 mermaid + jsdom，首次需 npm install）
@@ -61,6 +61,14 @@ Gateway 把"连接为什么失败"变成可观测：close 时把 `closeCause`/`p
 node scripts/verify-references.mjs <source_repo> <解读.md>...   # 代码引用：五态输出，MISMATCH 覆盖行号、UNVERIFIED 标记保留、TRAVERSAL 必须修复
 node scripts/verify-references.mjs --diff <source_repo> <解读.md>...   # 增量预检：输出 STABLE/STALE/UNRESOLVED 清单 + 汇总；全 STABLE 退出码 0
 node scripts/check-mermaid.mjs <解读.md>...                  # Mermaid 图：任一 [MERMAID-ERROR] 修复至全 OK，[MERMAID-WARN] 收敛为 0
+```
+
+产出 `architecture-design.md`（叙述型架构设计说明）时，**追加**一个：
+
+```bash
+node scripts/scan-narrative.mjs [--repo-root <解读目录>] <architecture-design.md>...
+# 叙述型核实：零代码索引 / 零跨文档引用 / <details> 内不得藏索引 / 引用的 SVG 存在且自包含 / 有图 / 取舍章节提到代价
+# 该文档不进 verify-references.mjs 的引用统计（零引用是预期行为，不是漏检）
 ```
 
 > 脚本内部与输出里沿用了历史参数名 `kb_repo`，**语义就是源码仓库根（`source_repo`）**——解读产物仍落在 `kb_repo`（知识库仓库），两者不要混。

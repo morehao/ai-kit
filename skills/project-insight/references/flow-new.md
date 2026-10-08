@@ -49,6 +49,17 @@ README → 架构/设计文档 → 目录树（推模块划分）→ 核心模�
 - **类型 / 语言模板提名**：按类型判定加载的规格（`references/project-types/{类型}.md`）+ 语言惯用法触发判据（见 [dimension-triggers.md](dimension-triggers.md)）提名。
 - **两者均只是候选，须经源码探测验证后落地**：候选关注面在源码里有对应实现、且能展开带 `文件:行号` 佐证的深度内容才成文；README 宣称过时/夸大、源码缺乏支撑的，标注并剔除，不硬凑（这条约束保住「让程序验证，不让模型自证」的铁律，README 只提名、不作论断依据）。
 
+## 写作口径确认（叙述型文档前置四问）
+
+开写 `architecture-design.md` 之前**一次问清**四件事，避免边写边改口径（实际项目里分了三轮才问清，代价是返工）：
+
+1. **是否带源码索引**：叙述型文档一律零代码索引；需确认的是会话内"论断↔证据"如何核对（不落盘，见 [kb-repo-rules.md](kb-repo-rules.md)「同源兜底不落盘」）。
+2. **版本号粒度**：产品名写不写版本、基线版本写在哪（README/CHANGELOG 已有约定）。
+3. **是否含同类项目对比**：叙述型文档默认**不做**同类对比（对比属证据型文档）。
+4. **量化指标有没有实测数据**：没有则走**可校准口径模型**（见 [quantification.md](quantification.md)），并事先说明"给的是口径不是承诺"。
+
+第 4 问直接决定是否需要"容量与性能口径"整章，所以必须写在动笔之前；骨架与逐章必答问题见 [narrative-design-template.md](narrative-design-template.md)。
+
 ## 写深，不翻译
 
 遵循 [analysis-guide.md](analysis-guide.md) 的深度方法论（Why>What、权衡、叙事连贯、全局关联、四要素完整性）与 [writing-guide.md](writing-guide.md) 的写作细则（中文为主 / 贴码克制 / 图表约束 / 信息密度）。深度不足标 `[WIP]`/`TODO`，不硬凑。
