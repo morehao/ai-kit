@@ -58,8 +58,11 @@ dsh plugin --profile web add @morehao/dsh-commands
 
 - 发布方式：升好版本后打 tag 并推送，workflow 用 OIDC 把该版本发布到 npmjs：
   ```bash
-  # 1) 升版本：改 commands-dsh/package.json 的 version（如 0.1.0 -> 0.2.0），提交并 push 到 main
-  # 2) 打与版本一致的 tag（去掉 v 前缀）：git tag v0.2.0 && git push origin v0.2.0
+  # 1) 升版本：改 commands-dsh/package.json 的 version（如 0.1.1 -> 0.2.0），在分支上提交并 push，开 PR 合并到 main
+  #    （稳定分支不接受直接提交，发版升版本也不例外；见 skills/git-kit/references/stable-branch.md）
+  # 2) 合并后切回 main 拉取，再打与版本一致的 tag（去掉 v 前缀，指向合并后的提交）：
+  #    git switch main && git pull --ff-only origin main
+  #    git tag -a v0.2.0 -m "release: v0.2.0" origin/main && git push origin v0.2.0
   ```
-  workflow 会校验 `tag 版本 == package.json version`（不一致拒绝发布）；同版本在 npm 已存在则跳过（幂等）。
+  workflow 会校验 `tag 版本 == package.json version`（不一致拒绝发布）；同版本在 npm 已存在则跳过（幂等）。细则见 [`PUBLISHING.md`](../PUBLISHING.md)「日常发新版」与 `skills/git-kit/references/tag.md`「发版约束」。
 - **关键约定**：`package.json` 的 `name`（npm 包名）与 `cordis.patch.yml` 的 `insert[0].name`（dsh 启动时 `import()` 的**模块标识符**）必须一致；`lib/index.js` 的 `export const name`（cordis 插件名）与 `cordis.patch.yml` 的 `insert[0].id` 保持一致即可，但与模块标识符解耦。改包名时请三者同步核对。

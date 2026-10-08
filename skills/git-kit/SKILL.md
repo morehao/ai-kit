@@ -15,7 +15,7 @@ Git 常见操作的统一入口。先按「意图路由」理解用户要做什�
 
 | 分支 key | 命中信号（用户消息中出现） | 对应子文件 |
 |---------|--------------------------|-----------|
-| `commit-push` | 提交/推送当前变更（"提交""push""commit""推送"） | `references/commit-push.md`（含 `commit-format.md`） |
+| `commit-push` | 提交/推送当前变更（"提交""push""commit""推送"）；起点是稳定分支时自动建工作分支 | `references/commit-push.md`（含 `commit-format.md`） |
 | `commit-message` | 只要 commit message 文案（"写个commit消息""生成commit信息"，或用户明确说"不用提交、只要文案"） | `references/commit-message.md`（含 `commit-format.md`） |
 | `branch` | 分支 + 中文描述（"建个分支…""切到新分支…""开个分支做XX"） | `references/branch.md` |
 | `pr-create` | 创建/更新 PR/MR（"提PR""创建合并请求""更新MR"） | `references/pr-create.md` |
@@ -32,8 +32,8 @@ Git 常见操作的统一入口。先按「意图路由」理解用户要做什�
 **参数约定**（从用户消息提取，优先于任何上下文）：
 - `branch`：提取中文描述（候选分支名唯一依据）。
 - `pr-create`：可选目标分支名；没有则探测目标仓库默认分支。
-- `pr-merge`：优先取用户显式提供的编号/URL；没有则探测当前分支关联的开放 PR/MR；无论来源，合并前都展示「编号 + 标题 + 目标分支 + head 分支及其去向（将删除 / 稳定分支保留）」并给用户**三选项（是 / 否 / 自定义 id）**确认；探测不到则要求用户提供编号，不猜测。head 为稳定分支（main/master/develop/release*/stable*/maintenance*/`1.x` 版本线等）时**一律保留不删**，判定与覆盖规则见 `references/pr-merge.md`。
-- `tag`：可选分支名或 tag 名（`$1`）；没有则探测最新 tag 与来源分支、候选分支、候选版本号并**先展示给用户选择确认**，不擅自决定打哪个分支/版本。
+- `pr-merge`：优先取用户显式提供的编号/URL；没有则探测当前分支关联的开放 PR/MR；无论来源，合并前都展示「编号 + 标题 + 目标分支 + head 分支及其去向（将删除 / 稳定分支保留）」并给用户**三选项（是 / 否 / 自定义 id）**确认；探测不到则要求用户提供编号，不猜测。head 为稳定分支时**一律保留不删**，判定与覆盖规则见 `references/stable-branch.md` 与 `references/pr-merge.md`。
+- `tag`：可选分支名或 tag 名（`$1`）；没有则探测最新 tag 与来源分支、候选分支、候选版本号并**先展示给用户选择确认**，不擅自决定打哪个分支/版本。目标是**发布**的仓库要额外对齐版本号（tag 版本必须等于发布包 `package.json` 版本，否则发布工作流拒绝发布）——不一致时先走 `commit-push` + `pr-create` 升版本，见 `references/tag.md`「发版约束」。
 - `slim`：可选保留天数 `N`；没有则默认 `30 days ago`。
 
 **两类消息的上下文约束：**
@@ -44,10 +44,10 @@ Git 常见操作的统一入口。先按「意图路由」理解用户要做什�
 
 确认分支后，执行以下子文件的完整流程：
 
-- `commit-push` 或 `commit-message`：先 `read references/commit-format.md`，再 `read references/<对应分支>.md`，最后按该文件执行。
+- `commit-push` 或 `commit-message`：先 `read references/commit-format.md`，再 `read references/<对应分支>.md`，最后按该文件执行。`commit-push` 另需先 `read references/stable-branch.md`（起点是稳定分支时自动建分支，发版升版本不例外）。
 - `branch`：`read references/branch.md`。
 - `pr-create`：先 `read references/repo-id.md`（gh/glab 的仓库参数规则），再 `read references/pr-create.md`。
-- `pr-merge`：先 `read references/repo-id.md`（同上），再 `read references/pr-merge.md`。
-- `tag`：`read references/tag.md`。
+- `pr-merge`：先 `read references/stable-branch.md`（判定 head 是否保留）与 `read references/repo-id.md`（gh/glab 的仓库参数规则），再 `read references/pr-merge.md`。
+- `tag`：先 `read references/stable-branch.md`（候选分支的稳定分支偏好），再 `read references/tag.md`（含「发版约束」：版本号对齐与升版本顺序）。
 - `slim`：`read references/slim.md`，按其中指引运行 `scripts/git-slim.sh`（脚本为单一真源，与 `/git/slim` 命令共用）。
 - `star-classify`：`read references/star-classify.md`，按其中指引运行 `scripts/git-star.sh`。

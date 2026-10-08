@@ -6,24 +6,16 @@
 
 删除参数是**服务端删除**（gh `--delete-branch` 删远端+本地；glab `--remove-source-branch` 删远端），下发后无法事后补救。因此必须**在前置检查阶段**先判定 head 是否为稳定分支，得出 `DELETE`（删除）或 `KEEP`（保留），再决定合并命令带不带删除参数。
 
-判定规则（对 head 分支名**全名**匹配，命中任一即 `KEEP`）。下表的 `<repo-id>` 指 `[HOST/]OWNER/REPO` 形式的仓库标识，按 `references/repo-id.md` 从 `<目标仓库>` 的 URL 解析——`<目标仓库>` 是远端名，直接喂给 gh/glab 会被拒绝（`gh repo view origin` 会查成 `morehao/origin` 报「仓库不存在」）：
+判定规则：head 是否稳定分支，**唯一定义在 `references/stable-branch.md`**（主干/集成分支、目标仓库默认分支、发布分支、稳定/维护分支、版本线分支；命中任一即 `KEEP`）。其中「目标仓库默认分支」的探测：`git remote show <目标仓库>` 的 `HEAD branch`，或 `gh repo view <repo-id> --json defaultBranchRef --jq .defaultBranchRef.name`——`<repo-id>` 是 `[HOST/]OWNER/REPO` 形式，按 `references/repo-id.md` 解析（远端名直接喂 gh/glab 会被拒绝：`gh repo view origin` 会查成 `morehao/origin` 报「仓库不存在」）。
 
-| 类别 | 命中形式 |
-|------|---------|
-| 主干/集成分支 | `main`、`master`、`trunk`、`develop`、`dev`、`integration` |
-| 目标仓库默认分支 | `git remote show <目标仓库>` 的 `HEAD branch`（或 `gh repo view <repo-id> --json defaultBranchRef --jq .defaultBranchRef.name`）——名字不在上列也算 |
-| 发布分支 | `release`、`release/*`、`release-*`、`releases/*` |
-| 稳定/维护分支 | `stable`、`stable/*`、`stable-*`、`maintenance/*`、`maint/*`、`support/*`、`lts/*` |
-| 版本线分支 | `v?<主版本>.x` 整名匹配，如 `1.x`、`2.0.x`、`v3.x` |
-
-不在上列的短生命周期工作分支照常删除：`feature/*`、`fix/*`、`bugfix/*`、`hotfix/*`、`chore/*`、`docs/*`、`refactor/*`、`perf/*`、`style/*`、`test/*`、`experiment/*`、`poc/*`。
+不属于稳定分支的短生命周期工作分支（`feature/*`、`fix/*`、`bugfix/*`、`hotfix/*`、`chore/*`、`docs/*`、`refactor/*`、`perf/*`、`style/*`、`test/*`、`experiment/*`、`poc/*`）照常删除。
 
 **硬规则**：`KEEP` 时全程不传删除参数、不清理本地同名分支；**即使当前分支的 PR/MR 用户显式要求删除该 head 也不删**，改为说明「该 head 是稳定分支，按规则保留」，不静默、也不擅自执行。
 
 ## 确定编号（按优先级）
 
 1. **用户显式提供**：`$1`（斜杠命令第一参数）或消息中的编号/URL（`#123`、`github.com/.../pull/123`、`gitlab.com/.../-/merge_requests/123`）→ 直接提取编号
-2. **上下文探测**：无显式编号时，若当前分支不是主干/集成分支（即上方「稳定分支识别」第一类，`main`/`master`/`trunk`/`develop`/`dev`/`integration`），探测当前分支关联的开放 PR/MR：
+2. **上下文探测**：无显式编号时，若当前分支不是主干/集成分支（见 `references/stable-branch.md` 第一类，如 `main`/`master`/`trunk`/`develop`/`dev`/`integration`），探测当前分支关联的开放 PR/MR：
    - gh：`gh pr view --json number,state,baseRefName --jq '{number,state,base:.baseRefName}'`（无参数即取当前分支 PR）；报错或 `state` 非 `OPEN` → 视为探测不到
    - glab：`glab mr view <当前分支> --output json | jq '{iid, state, target_branch}'` 或 `glab mr list --source-branch <当前分支>` 解析 IID；`state` 非 `opened` → 视为探测不到
 3. **三选项确认**：无论编号来自显式提供还是上下文探测，合并前都把「编号 + 标题 + 目标分支 + head 分支及其去向（`将删除` / `稳定分支，保留`）」展示给用户，并提供三个选项：
@@ -42,7 +34,7 @@
    - glab：`glab mr view <id> --output json | jq '{state, base:.target_branch, head:.source_branch}'`，`state` 须为 `opened`
    - 已 `MERGED`/`merged` 或 `CLOSED`/`closed`、查不到 → 停止并完整报告
 4. 记录 base/head 分支名；**若当前分支 == head**，先 `git switch <base>` 再合并（避免删除当前所在分支失败）
-5. **判定 head 去向**：按上方「稳定分支识别」得 `DELETE` 或 `KEEP`；结果写进三选项确认的展示项，并在最终报告中原样复述
+5. **判定 head 去向**：按上方「稳定分支识别」（唯一定义在 `references/stable-branch.md`）得 `DELETE` 或 `KEEP`；结果写进三选项确认的展示项，并在最终报告中原样复述
 
 ## 执行流程
 
