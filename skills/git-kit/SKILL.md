@@ -46,8 +46,8 @@ Git 常见操作的统一入口。先按「意图路由」理解用户要做什�
 
 - `commit-push` 或 `commit-message`：先 `read references/commit-format.md`，再 `read references/<对应分支>.md`，最后按该文件执行。
 - `branch`：`read references/branch.md`。
-- `pr-create`：`read references/pr-create.md`。
-- `pr-merge`：`read references/pr-merge.md`。
+- `pr-create`：先 `read references/repo-id.md`（gh/glab 的仓库参数规则），再 `read references/pr-create.md`。
+- `pr-merge`：先 `read references/repo-id.md`（同上），再 `read references/pr-merge.md`。
 - `tag`：`read references/tag.md`。
 - `slim`：`read references/slim.md`，按其中指引运行 `scripts/git-slim.sh`（脚本为单一真源，与 `/git/slim` 命令共用）。
 - `star-classify`：`read references/star-classify.md`，按其中指引运行 `scripts/git-star.sh`。

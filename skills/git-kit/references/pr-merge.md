@@ -6,12 +6,12 @@
 
 删除参数是**服务端删除**（gh `--delete-branch` 删远端+本地；glab `--remove-source-branch` 删远端），下发后无法事后补救。因此必须**在前置检查阶段**先判定 head 是否为稳定分支，得出 `DELETE`（删除）或 `KEEP`（保留），再决定合并命令带不带删除参数。
 
-判定规则（对 head 分支名**全名**匹配，命中任一即 `KEEP`）：
+判定规则（对 head 分支名**全名**匹配，命中任一即 `KEEP`）。下表的 `<repo-id>` 指 `[HOST/]OWNER/REPO` 形式的仓库标识，按 `references/repo-id.md` 从 `<目标仓库>` 的 URL 解析——`<目标仓库>` 是远端名，直接喂给 gh/glab 会被拒绝（`gh repo view origin` 会查成 `morehao/origin` 报「仓库不存在」）：
 
 | 类别 | 命中形式 |
 |------|---------|
 | 主干/集成分支 | `main`、`master`、`trunk`、`develop`、`dev`、`integration` |
-| 目标仓库默认分支 | `git remote show <目标仓库>` 的 `HEAD branch`（或 `gh repo view <目标仓库> --json defaultBranchRef --jq .defaultBranchRef.name`）——名字不在上列也算 |
+| 目标仓库默认分支 | `git remote show <目标仓库>` 的 `HEAD branch`（或 `gh repo view <repo-id> --json defaultBranchRef --jq .defaultBranchRef.name`）——名字不在上列也算 |
 | 发布分支 | `release`、`release/*`、`release-*`、`releases/*` |
 | 稳定/维护分支 | `stable`、`stable/*`、`stable-*`、`maintenance/*`、`maint/*`、`support/*`、`lts/*` |
 | 版本线分支 | `v?<主版本>.x` 整名匹配，如 `1.x`、`2.0.x`、`v3.x` |
