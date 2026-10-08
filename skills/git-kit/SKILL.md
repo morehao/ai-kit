@@ -19,7 +19,7 @@ Git 常见操作的统一入口。先按「意图路由」理解用户要做什�
 | `commit-message` | 只要 commit message 文案（"写个commit消息""生成commit信息"，或用户明确说"不用提交、只要文案"） | `references/commit-message.md`（含 `commit-format.md`） |
 | `branch` | 分支 + 中文描述（"建个分支…""切到新分支…""开个分支做XX"） | `references/branch.md` |
 | `pr-create` | 创建/更新 PR/MR（"提PR""创建合并请求""更新MR"） | `references/pr-create.md` |
-| `pr-merge` | 合并 PR/MR 并回主干更新（"合并PR""合并MR""merge PR""把PR合掉""合入主干"） | `references/pr-merge.md` |
+| `pr-merge` | 合并 PR/MR 并回主干更新（"合并PR""合并MR""merge PR""把PR合掉""合入主干"）；命中后 head 为稳定分支时保留不删 | `references/pr-merge.md` |
 | `tag` | 给分支打版本标签并推送（"打tag""打个tag""打标签""发个版本""发版""release tag"） | `references/tag.md` |
 | `slim` | 仓库瘦身/浅克隆/减小体积（"瘦身""清理git历史""shallow clone"） | `references/slim.md` |
 | `star-classify` | 拉取并分类自己 star 的 GitHub 仓库（"分类我的star""把我star的仓库整理成清单"） | `references/star-classify.md` |
@@ -32,7 +32,7 @@ Git 常见操作的统一入口。先按「意图路由」理解用户要做什�
 **参数约定**（从用户消息提取，优先于任何上下文）：
 - `branch`：提取中文描述（候选分支名唯一依据）。
 - `pr-create`：可选目标分支名；没有则探测目标仓库默认分支。
-- `pr-merge`：优先取用户显式提供的编号/URL；没有则探测当前分支关联的开放 PR/MR；无论来源，合并前都展示「编号 + 标题 + 目标分支 + 将删除的 head 分支」并给用户**三选项（是 / 否 / 自定义 id）**确认；探测不到则要求用户提供编号，不猜测。
+- `pr-merge`：优先取用户显式提供的编号/URL；没有则探测当前分支关联的开放 PR/MR；无论来源，合并前都展示「编号 + 标题 + 目标分支 + head 分支及其去向（将删除 / 稳定分支保留）」并给用户**三选项（是 / 否 / 自定义 id）**确认；探测不到则要求用户提供编号，不猜测。head 为稳定分支（main/master/develop/release*/stable*/maintenance*/`1.x` 版本线等）时**一律保留不删**，判定与覆盖规则见 `references/pr-merge.md`。
 - `tag`：可选分支名或 tag 名（`$1`）；没有则探测最新 tag 与来源分支、候选分支、候选版本号并**先展示给用户选择确认**，不擅自决定打哪个分支/版本。
 - `slim`：可选保留天数 `N`；没有则默认 `30 days ago`。
 
