@@ -63,7 +63,7 @@ ai-kit/
 | `commands-opencode/git/branch` | 基于中文描述生成候选分支名，选择后从基准分支创建并切换 |
 | `commands-opencode/git/message` | 将中文描述转换为 Conventional Commits 格式的 commit message（纯生成，不提交） |
 | `commands-opencode/git/pr-create` | 基于代码差异向目标仓库创建或更新 PR/MR（自动识别 gh/glab） |
-| `commands-opencode/git/pr-merge` | 按编号合并 PR/MR，删除原分支，切回主干并更新代码（自动识别 gh/glab） |
+| `commands-opencode/git/pr-merge` | 按编号合并 PR/MR，删除原分支（head 为稳定分支时保留），切回主干并更新代码（自动识别 gh/glab） |
 | `commands-opencode/git/tag` | 查看最新 tag 与来源分支，选择要打 tag 的分支与版本号，构建注记 tag 并推送 |
 | `commands-opencode/git/commit-push` | 基于代码变更自动生成 commit message 并执行提交推送 |
 | `commands-opencode/git/slim` | 将当前 git 仓库瘦身为浅克隆，默认保留 30 天历史 |
